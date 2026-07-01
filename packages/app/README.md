@@ -14,10 +14,10 @@ yarn install
 
 ## Usage
 
-Start the local development server:
+Start the local development server from the repository root:
 
 ```bash
-yarn dev
+yarn start
 ```
 
 Then open:
@@ -102,19 +102,19 @@ When hidden token-like nodes are collapsed, the viewer connects the nearest visi
 ## Scripts
 
 ```bash
-yarn dev
+yarn start
 yarn lint
 yarn build
-yarn start
 ```
 
 ## Deploying to Vercel
 
-This is a standard Next.js app. Vercel should detect the project automatically.
+This is a standard Next.js app inside a workspace.
 
 Recommended project settings:
 
 ```text
+Root Directory: packages/app
 Framework Preset: Next.js
 Install Command: yarn install --frozen-lockfile
 Build Command: yarn build

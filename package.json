@@ -7,9 +7,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "yarn workspace @lending-markets/app dev",
-    "build": "yarn workspace @lending-markets/app build",
-    "start": "yarn workspace @lending-markets/app start",
-    "lint": "yarn workspace @lending-markets/app lint"
+    "dev": "node scripts/start.mjs",
+    "start": "node scripts/start.mjs",
+    "build": "yarn workspace @lending-markets/backend build && yarn workspace @lending-markets/app build",
+    "lint": "yarn workspace @lending-markets/backend typecheck && yarn workspace @lending-markets/app lint",
+    "app:dev": "yarn workspace @lending-markets/app dev",
+    "backend:start": "yarn workspace @lending-markets/backend start"
   }
 }

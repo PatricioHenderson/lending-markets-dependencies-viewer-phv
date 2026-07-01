@@ -1,0 +1,10 @@
+const MILLISECONDS_PER_SECOND = 1000
+const SECONDS_PER_MINUTE = 60
+const MINUTES_PER_HOUR = 60
+const HOURS_PER_DAY = 24
+
+export const SECONDS_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE
+
+export function currentUnixTimestampSeconds(): number {
+  return Math.floor(Date.now() / MILLISECONDS_PER_SECOND)
+}

@@ -6,10 +6,16 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { GraphCanvas } from "./graph-canvas"
 import { DetailsPanel } from "./details-panel"
 import { JsonInputPanel } from "./json-input-panel"
-import { computeVisibleGraph } from "@/lib/graph-filter"
+import {
+  MarketRequestPanel,
+  type MarketGraphLoadRequest,
+} from "./market-request-panel"
+import { computeVisibleGraph, parseGraph } from "@/lib/graph-filter"
 import { SAMPLE_GRAPH, SAMPLE_GRAPH_JSON } from "@/lib/sample-graph"
 import type { DependencyGraph } from "@/lib/graph-types"
 import { Button } from "@/components/ui/button"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 
 export function GraphExplorer() {
   const [rawJson, setRawJson] = useState(SAMPLE_GRAPH_JSON)
@@ -18,6 +24,8 @@ export function GraphExplorer() {
   const [showTokens, setShowTokens] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [inputOpen, setInputOpen] = useState(true)
+  const [loadingMarket, setLoadingMarket] = useState(false)
+  const [marketError, setMarketError] = useState<string | null>(null)
 
   const visible = useMemo(
     () => computeVisibleGraph(graph, { showProtocols, showTokens }),
@@ -32,6 +40,37 @@ export function GraphExplorer() {
   const handleApply = (g: DependencyGraph) => {
     setGraph(g)
     setSelectedId(null)
+  }
+
+  const handleLoadMarket = async (request: MarketGraphLoadRequest) => {
+    setLoadingMarket(true)
+    setMarketError(null)
+
+    try {
+      const params = new URLSearchParams({
+        protocol: request.protocol,
+        chainId: request.chainId,
+        marketId: request.marketId,
+        llm: request.llm,
+      })
+      const response = await fetch(`${API_BASE_URL}/api/graph?${params.toString()}`)
+      const payload = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(readApiError(payload) || `Backend returned HTTP ${response.status}`)
+      }
+
+      const nextJson = JSON.stringify(payload, null, 2)
+      const { graph: nextGraph, error } = parseGraph(nextJson)
+      if (error || !nextGraph) throw new Error(error || "Backend returned an invalid graph.")
+
+      setRawJson(nextJson)
+      handleApply(nextGraph)
+    } catch (error) {
+      setMarketError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setLoadingMarket(false)
+    }
   }
 
   return (
@@ -71,7 +110,17 @@ export function GraphExplorer() {
         {/* Input panel */}
         {inputOpen && (
           <div className="flex w-80 shrink-0 flex-col border-r border-border bg-card p-4">
-            <JsonInputPanel value={rawJson} onChange={setRawJson} onApply={handleApply} />
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <MarketRequestPanel
+                loading={loadingMarket}
+                error={marketError}
+                onLoad={handleLoadMarket}
+              />
+              <div className="h-px shrink-0 bg-border" />
+              <div className="min-h-0 flex-1">
+                <JsonInputPanel value={rawJson} onChange={setRawJson} onApply={handleApply} />
+              </div>
+            </div>
           </div>
         )}
 
@@ -103,4 +152,10 @@ export function GraphExplorer() {
       </div>
     </div>
   )
+}
+
+function readApiError(payload: unknown): string | null {
+  if (typeof payload !== "object" || payload === null) return null
+  if (!("error" in payload)) return null
+  return typeof payload.error === "string" ? payload.error : null
 }
