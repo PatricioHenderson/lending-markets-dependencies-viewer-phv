@@ -5,10 +5,11 @@
   "private": true,
   "description": "Token Dependencies Viewer",
   "scripts": {
-    "dev": "next dev",
+    "prestart": "yarn build",
+    "lint": "eslint .",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint ."
+    "dev": "next dev",
+    "start": "next start"
   },
   "dependencies": {
     "@radix-ui/react-label": "2.1.8",

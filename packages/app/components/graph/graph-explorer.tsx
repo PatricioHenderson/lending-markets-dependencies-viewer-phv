@@ -94,7 +94,7 @@ export function GraphExplorer() {
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
             <h1 className="text-sm font-semibold tracking-tight text-foreground">
-              DeFi Dependency Graph Explorer
+              Lending Market Dependency Graph Explorer
             </h1>
           </div>
         </div>

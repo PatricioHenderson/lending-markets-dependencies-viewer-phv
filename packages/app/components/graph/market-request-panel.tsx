@@ -117,12 +117,12 @@ export function MarketRequestPanel({ loading, error, onLoad }: MarketRequestPane
       </div>
 
       <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-        Market
+        Market address
         <input
           value={marketId}
           onChange={(event) => setMarketId(event.target.value)}
           className="h-8 rounded-md border border-input bg-background px-2 font-mono text-xs text-foreground"
-          placeholder="address, symbol, or market id"
+          placeholder="0x..."
         />
       </label>
 

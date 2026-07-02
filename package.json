@@ -1,5 +1,5 @@
 {
-  "name": "lending-markets-dependencies-viewer",
+  "name": "@lending-markets/monorepo",
   "version": "1.0.0",
   "packageManager": "yarn@1.22.19",
   "private": true,
@@ -7,11 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "node scripts/start.mjs",
-    "start": "node scripts/start.mjs",
-    "build": "yarn workspace @lending-markets/backend build && yarn workspace @lending-markets/app build",
-    "lint": "yarn workspace @lending-markets/backend typecheck && yarn workspace @lending-markets/app lint",
-    "app:dev": "yarn workspace @lending-markets/app dev",
-    "backend:start": "yarn workspace @lending-markets/backend start"
+    "lint": "yarn workspaces run lint",
+    "build": "yarn workspaces run build",
+    "dev": "yarn workspace @lending-markets/backend dev & yarn workspace @lending-markets/app dev & wait",
+    "start": "yarn workspace @lending-markets/backend start & yarn workspace @lending-markets/app start & wait"
   }
 }
