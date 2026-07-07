@@ -8,11 +8,14 @@ export type NodeType =
 
 export type EdgeType = "loan" | "collateral" | "protocol" | "underlying"
 
-export interface CollateralSupplyMetrics {
+export interface MarketSupplyMetrics {
   suppliedAmount: string
   supplyCapAmount: string
   supplyCapUsedPct?: number
   suppliedUsd: number
+}
+
+export interface CollateralSupplyMetrics extends MarketSupplyMetrics {
   shareOfCollateralPct: number
 }
 
@@ -21,6 +24,7 @@ export interface GraphNode {
   type: NodeType
   label: string
   supplyMetrics?: CollateralSupplyMetrics
+  marketSupply?: MarketSupplyMetrics
 }
 
 export interface GraphEdge {

@@ -3,6 +3,7 @@ import {
   type DependencyGraph,
   type EdgeType,
   type GraphNode,
+  type MarketSupplyMetrics,
   TOKEN_LIKE_TYPES,
 } from "./graph-types"
 
@@ -22,21 +23,27 @@ export interface ParseResult {
 }
 
 /** Best-effort parse of optional per-node supply metrics; malformed input is dropped, not fatal. */
-function parseSupplyMetrics(value: unknown): CollateralSupplyMetrics | undefined {
+function parseMarketSupply(value: unknown): MarketSupplyMetrics | undefined {
   if (typeof value !== "object" || value === null) return undefined
   const m = value as Record<string, unknown>
   if (typeof m.suppliedAmount !== "string") return undefined
   if (typeof m.supplyCapAmount !== "string") return undefined
   if (typeof m.suppliedUsd !== "number") return undefined
-  if (typeof m.shareOfCollateralPct !== "number") return undefined
 
   return {
     suppliedAmount: m.suppliedAmount,
     supplyCapAmount: m.supplyCapAmount,
     supplyCapUsedPct: typeof m.supplyCapUsedPct === "number" ? m.supplyCapUsedPct : undefined,
     suppliedUsd: m.suppliedUsd,
-    shareOfCollateralPct: m.shareOfCollateralPct,
   }
+}
+
+function parseSupplyMetrics(value: unknown): CollateralSupplyMetrics | undefined {
+  const base = parseMarketSupply(value)
+  const m = value as Record<string, unknown>
+  if (!base || typeof m.shareOfCollateralPct !== "number") return undefined
+
+  return { ...base, shareOfCollateralPct: m.shareOfCollateralPct }
 }
 
 /** Parse + validate a graph JSON string. */
@@ -84,11 +91,13 @@ export function parseGraph(input: string): ParseResult {
     }
     ids.add(n.id)
     const supplyMetrics = parseSupplyMetrics(n.supplyMetrics)
+    const marketSupply = parseMarketSupply(n.marketSupply)
     nodes.push({
       id: n.id,
       type: n.type as GraphNode["type"],
       label: n.label,
       ...(supplyMetrics ? { supplyMetrics } : {}),
+      ...(marketSupply ? { marketSupply } : {}),
     })
   }
 

@@ -28,13 +28,15 @@ POST /api/graph
 
 `protocol` supports `aave-v3`, `morpho`, `spark`, and `maple`.
 
+`llm` supports `openai` (default), `claude`, and `openrouter`.
+
 Required environment variables depend on the selected market:
 
-- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` to expand token dependencies.
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENROUTER_API_KEY` to expand token dependencies.
 - `THE_GRAPH_API_KEY` for Aave V3 graph generation.
 
 Optional:
 
 - `PORT`, `HOST`, `CORS_ORIGIN`
-- `OPENAI_MODEL`, `ANTHROPIC_MODEL`
+- `OPENAI_MODEL`, `ANTHROPIC_MODEL`, `OPENROUTER_MODEL`
 - `NEXT_PUBLIC_API_URL` for the frontend API base URL.

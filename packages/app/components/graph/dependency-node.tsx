@@ -2,8 +2,9 @@
 
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
-import { NODE_TYPE_META, type NodeType } from "@/lib/graph-types"
-import type { FlowNodeData } from "@/lib/graph-layout"
+import { NODE_TYPE_META, type MarketSupplyMetrics, type NodeType } from "@/lib/graph-types"
+import { formatAmount, formatPct, formatUsd } from "@/lib/format"
+import { NODE_HEIGHT, NODE_WIDTH, SUPPLY_NODE_HEIGHT, SUPPLY_NODE_WIDTH, type FlowNodeData } from "@/lib/graph-layout"
 import { cn } from "@/lib/utils"
 
 function DependencyNodeComponent({ data, selected }: NodeProps) {
@@ -11,6 +12,8 @@ function DependencyNodeComponent({ data, selected }: NodeProps) {
   const meta = NODE_TYPE_META[d.type as NodeType]
   const color = meta?.color ?? "#94a3b8"
   const isRoot = d.isRoot
+  const metrics: MarketSupplyMetrics | undefined = d.supplyMetrics ?? d.marketSupply
+  const shareOfCollateralPct = d.supplyMetrics?.shareOfCollateralPct
 
   return (
     <div
@@ -20,8 +23,8 @@ function DependencyNodeComponent({ data, selected }: NodeProps) {
         selected ? "ring-2 ring-offset-1 ring-offset-background" : "",
       )}
       style={{
-        width: 180,
-        height: 56,
+        width: metrics ? SUPPLY_NODE_WIDTH : NODE_WIDTH,
+        height: metrics ? SUPPLY_NODE_HEIGHT : NODE_HEIGHT,
         borderColor: color,
         boxShadow: isRoot ? `0 0 0 1px ${color}, 0 0 18px ${color}55` : undefined,
         // @ts-expect-error css var for ring
@@ -46,7 +49,35 @@ function DependencyNodeComponent({ data, selected }: NodeProps) {
       >
         {d.label}
       </span>
+      {metrics && (
+        <div className="mt-1.5 space-y-1 border-t border-border/60 pt-1.5 text-[9px] leading-tight">
+          <MetricRow
+            label="Supplied"
+            value={`${formatAmount(metrics.suppliedAmount)} (${formatUsd(metrics.suppliedUsd)})`}
+          />
+          <MetricRow
+            label="Supply cap"
+            value={
+              metrics.supplyCapUsedPct === undefined
+                ? "No cap"
+                : `${formatAmount(metrics.supplyCapAmount)} (${formatPct(metrics.supplyCapUsedPct)} used)`
+            }
+          />
+          {shareOfCollateralPct !== undefined && (
+            <MetricRow label="Share of market collateral" value={formatPct(shareOfCollateralPct)} />
+          )}
+        </div>
+      )}
       <Handle type="source" position={Position.Right} className="!h-2 !w-2 !border-0 !bg-muted-foreground" />
+    </div>
+  )
+}
+
+function MetricRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-1.5">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="text-right font-medium text-card-foreground">{value}</span>
     </div>
   )
 }

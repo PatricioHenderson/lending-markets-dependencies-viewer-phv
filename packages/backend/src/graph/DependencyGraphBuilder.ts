@@ -36,6 +36,7 @@ export class DependencyGraphBuilder {
   async build(input: DependencyGraphInput, chain: string): Promise<DependencyGraph> {
     const graph = this.newGraph(chain)
     const root = this.newNode(DEPENDENCY_NODE_TYPE_MARKET, input.market, chain, input.market)
+    if (input.marketSupply) root.marketSupply = input.marketSupply
 
     graph.nodes.set(root.id, root)
     this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_PROTOCOL, input.protocol, DEPENDENCY_NODE_TYPE_PROTOCOL)

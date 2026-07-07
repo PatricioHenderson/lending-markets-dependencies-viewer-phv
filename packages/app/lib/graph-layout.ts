@@ -1,15 +1,25 @@
 import dagre from "dagre"
 import { type Edge, type Node, MarkerType, Position } from "@xyflow/react"
-import { EDGE_TYPE_META } from "./graph-types"
+import { EDGE_TYPE_META, type CollateralSupplyMetrics, type GraphNode, type MarketSupplyMetrics } from "./graph-types"
 import type { VisibleGraph } from "./graph-filter"
 
 export const NODE_WIDTH = 180
 export const NODE_HEIGHT = 56
+export const SUPPLY_NODE_WIDTH = 226
+export const SUPPLY_NODE_HEIGHT = 136
 
 export interface FlowNodeData extends Record<string, unknown> {
   label: string
   type: string
   isRoot: boolean
+  supplyMetrics?: CollateralSupplyMetrics
+  marketSupply?: MarketSupplyMetrics
+}
+
+export function nodeSize(n: Pick<GraphNode, "supplyMetrics" | "marketSupply">): { width: number; height: number } {
+  return n.supplyMetrics || n.marketSupply
+    ? { width: SUPPLY_NODE_WIDTH, height: SUPPLY_NODE_HEIGHT }
+    : { width: NODE_WIDTH, height: NODE_HEIGHT }
 }
 
 export function layoutGraph(
@@ -21,7 +31,8 @@ export function layoutGraph(
   g.setGraph({ rankdir: "LR", nodesep: 28, ranksep: 120, marginx: 24, marginy: 24 })
 
   for (const n of visible.nodes) {
-    g.setNode(n.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+    const size = nodeSize(n)
+    g.setNode(n.id, { width: size.width, height: size.height })
   }
   for (const e of visible.edges) {
     g.setEdge(e.source, e.target)
@@ -31,11 +42,18 @@ export function layoutGraph(
 
   const nodes: Node<FlowNodeData>[] = visible.nodes.map((n) => {
     const pos = g.node(n.id)
+    const size = nodeSize(n)
     return {
       id: n.id,
       type: "dependency",
-      position: { x: (pos?.x ?? 0) - NODE_WIDTH / 2, y: (pos?.y ?? 0) - NODE_HEIGHT / 2 },
-      data: { label: n.label, type: n.type, isRoot: n.id === rootId },
+      position: { x: (pos?.x ?? 0) - size.width / 2, y: (pos?.y ?? 0) - size.height / 2 },
+      data: {
+        label: n.label,
+        type: n.type,
+        isRoot: n.id === rootId,
+        supplyMetrics: n.supplyMetrics,
+        marketSupply: n.marketSupply,
+      },
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
     }

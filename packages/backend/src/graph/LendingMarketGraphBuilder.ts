@@ -7,6 +7,7 @@ import type {
   DependencyGraphInput,
   MarketGraphRequest,
   MarketProtocol,
+  MarketSupplyMetrics,
   SupportedProtocol,
 } from './types'
 import { AaveQuerier } from '../protocols/aave/AaveQuerier'
@@ -71,6 +72,7 @@ export class LendingMarketGraphBuilder {
         loan: resolved.reserve.underlyingToken.symbol,
         collaterals: collateralReserves.map((reserve) => reserve.underlyingToken.symbol || reserve.aToken.symbol),
         collateralMetrics: this.buildCollateralMetrics(collateralReserves),
+        marketSupply: this.reserveSupplyBase(resolved.reserve),
       }
     }
 
@@ -128,19 +130,26 @@ export class LendingMarketGraphBuilder {
     const metrics: Record<string, CollateralSupplyMetrics> = {}
     for (const reserve of reserves) {
       const symbol = reserve.underlyingToken.symbol || reserve.aToken.symbol
-      const suppliedAmount = Number(reserve.supplyInfo.total.value)
-      const supplyCapAmount = Number(reserve.supplyInfo.supplyCap.amount.value)
       const suppliedUsd = Number(reserve.size.usd)
 
       metrics[symbol] = {
-        suppliedAmount: reserve.supplyInfo.total.value,
-        supplyCapAmount: reserve.supplyInfo.supplyCap.amount.value,
-        supplyCapUsedPct: supplyCapAmount > 0 ? (suppliedAmount / supplyCapAmount) * 100 : undefined,
-        suppliedUsd,
+        ...this.reserveSupplyBase(reserve),
         shareOfCollateralPct: totalCollateralUsd > 0 ? (suppliedUsd / totalCollateralUsd) * 100 : 0,
       }
     }
 
     return metrics
+  }
+
+  private reserveSupplyBase(reserve: AaveReserve): MarketSupplyMetrics {
+    const suppliedAmount = Number(reserve.supplyInfo.total.value)
+    const supplyCapAmount = Number(reserve.supplyInfo.supplyCap.amount.value)
+
+    return {
+      suppliedAmount: reserve.supplyInfo.total.value,
+      supplyCapAmount: reserve.supplyInfo.supplyCap.amount.value,
+      supplyCapUsedPct: supplyCapAmount > 0 ? (suppliedAmount / supplyCapAmount) * 100 : undefined,
+      suppliedUsd: Number(reserve.size.usd),
+    }
   }
 }

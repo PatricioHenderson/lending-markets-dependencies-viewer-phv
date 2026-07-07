@@ -1,6 +1,7 @@
 import { AnthropicClient } from './AnthropicClient'
 import { OpenAIClient } from './OpenAIClient'
-import { DEFAULT_LLM_PROVIDER, LLM_PROVIDER_CLAUDE, type LlmProvider } from './providers'
+import { OpenRouterClient } from './OpenRouterClient'
+import { DEFAULT_LLM_PROVIDER, LLM_PROVIDER_CLAUDE, LLM_PROVIDER_OPENROUTER, type LlmProvider } from './providers'
 
 export interface LlmJsonRequest {
   instructions: string
@@ -11,7 +12,9 @@ export interface LlmJsonRequest {
 
 export abstract class LlmClient {
   static create(provider: LlmProvider = DEFAULT_LLM_PROVIDER): LlmClient {
-    return provider === LLM_PROVIDER_CLAUDE ? new AnthropicClient() : new OpenAIClient()
+    if (provider === LLM_PROVIDER_CLAUDE) return new AnthropicClient()
+    if (provider === LLM_PROVIDER_OPENROUTER) return new OpenRouterClient()
+    return new OpenAIClient()
   }
 
   abstract requestJson<T>(request: LlmJsonRequest): Promise<T>

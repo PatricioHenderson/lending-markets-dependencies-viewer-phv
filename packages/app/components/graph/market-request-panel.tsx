@@ -135,6 +135,7 @@ export function MarketRequestPanel({ loading, error, onLoad }: MarketRequestPane
         >
           <option value="openai">OpenAI</option>
           <option value="claude">Claude</option>
+          <option value="openrouter">OpenRouter</option>
         </select>
       </label>
 

@@ -8,8 +8,10 @@ import {
   type DependencyGraph,
   type EdgeType,
   type GraphNode,
+  type MarketSupplyMetrics,
   type NodeType,
 } from "@/lib/graph-types"
+import { formatAmount, formatPct, formatUsd } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -70,6 +72,7 @@ export function DetailsPanel({ node, graph, onClose, onSelectNode }: DetailsPane
           </Field>
 
           {node.supplyMetrics && <SupplySection metrics={node.supplyMetrics} />}
+          {node.marketSupply && <MarketSupplySection metrics={node.marketSupply} />}
 
           <EdgeList
             title={`Incoming (${incoming.length})`}
@@ -124,6 +127,27 @@ function SupplySection({ metrics }: { metrics: CollateralSupplyMetrics }) {
   )
 }
 
+function MarketSupplySection({ metrics }: { metrics: MarketSupplyMetrics }) {
+  return (
+    <Field label="Total Supply">
+      <div className="space-y-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-2 text-xs">
+        <SupplyRow
+          label="Supplied"
+          value={`${formatAmount(metrics.suppliedAmount)} (${formatUsd(metrics.suppliedUsd)})`}
+        />
+        <SupplyRow
+          label="Supply cap"
+          value={
+            metrics.supplyCapUsedPct === undefined
+              ? "No cap"
+              : `${formatAmount(metrics.supplyCapAmount)} (${formatPct(metrics.supplyCapUsedPct)} used)`
+          }
+        />
+      </div>
+    </Field>
+  )
+}
+
 function SupplyRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -131,19 +155,6 @@ function SupplyRow({ label, value }: { label: string; value: string }) {
       <span className="text-card-foreground">{value}</span>
     </div>
   )
-}
-
-function formatAmount(raw: string): string {
-  return Number(raw).toLocaleString(undefined, { maximumFractionDigits: 2 })
-}
-
-function formatUsd(value: number): string {
-  return value.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 })
-}
-
-function formatPct(value: number): string {
-  if (Math.abs(value) >= 1000) return `${Math.round(value).toLocaleString()}%`
-  return `${value.toFixed(1)}%`
 }
 
 function EdgeList({
