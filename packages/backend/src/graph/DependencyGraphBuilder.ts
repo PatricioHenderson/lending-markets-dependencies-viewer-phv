@@ -46,6 +46,8 @@ export class DependencyGraphBuilder {
     for (const collateral of input.collaterals) {
       const tokenDependencies = await this.getTokenDependencies(graph, collateral)
       const node = this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_COLLATERAL, collateral, tokenDependencies.tokenType)
+      const supplyMetrics = input.collateralMetrics?.[collateral]
+      if (supplyMetrics) node.supplyMetrics = supplyMetrics
       await this.expandTokenNode(graph, node, tokenDependencies.dependencies, new Set([root.id]))
     }
 

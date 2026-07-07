@@ -8,10 +8,19 @@ export type NodeType =
 
 export type EdgeType = "loan" | "collateral" | "protocol" | "underlying"
 
+export interface CollateralSupplyMetrics {
+  suppliedAmount: string
+  supplyCapAmount: string
+  supplyCapUsedPct?: number
+  suppliedUsd: number
+  shareOfCollateralPct: number
+}
+
 export interface GraphNode {
   id: string
   type: NodeType
   label: string
+  supplyMetrics?: CollateralSupplyMetrics
 }
 
 export interface GraphEdge {
@@ -55,4 +64,13 @@ export const EDGE_TYPE_META: Record<
   collateral: { label: "Collateral", color: "#34d399" },
   protocol: { label: "Protocol", color: "#818cf8" },
   underlying: { label: "Underlying", color: "#5eead4" },
+}
+
+export const EDGE_TYPES: EdgeType[] = ["loan", "collateral", "protocol", "underlying"]
+
+export const DEFAULT_EDGE_TYPE_VISIBILITY: Record<EdgeType, boolean> = {
+  loan: true,
+  collateral: true,
+  protocol: true,
+  underlying: true,
 }

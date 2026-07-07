@@ -4,6 +4,7 @@ import { X } from "lucide-react"
 import {
   EDGE_TYPE_META,
   NODE_TYPE_META,
+  type CollateralSupplyMetrics,
   type DependencyGraph,
   type EdgeType,
   type GraphNode,
@@ -68,6 +69,8 @@ export function DetailsPanel({ node, graph, onClose, onSelectNode }: DetailsPane
             </code>
           </Field>
 
+          {node.supplyMetrics && <SupplySection metrics={node.supplyMetrics} />}
+
           <EdgeList
             title={`Incoming (${incoming.length})`}
             empty="No incoming edges"
@@ -97,6 +100,50 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   )
+}
+
+function SupplySection({ metrics }: { metrics: CollateralSupplyMetrics }) {
+  return (
+    <Field label="Supply">
+      <div className="space-y-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-2 text-xs">
+        <SupplyRow
+          label="Supplied"
+          value={`${formatAmount(metrics.suppliedAmount)} (${formatUsd(metrics.suppliedUsd)})`}
+        />
+        <SupplyRow
+          label="Supply cap"
+          value={
+            metrics.supplyCapUsedPct === undefined
+              ? "No cap"
+              : `${formatAmount(metrics.supplyCapAmount)} (${formatPct(metrics.supplyCapUsedPct)} used)`
+          }
+        />
+        <SupplyRow label="Share of market collateral" value={formatPct(metrics.shareOfCollateralPct)} />
+      </div>
+    </Field>
+  )
+}
+
+function SupplyRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-card-foreground">{value}</span>
+    </div>
+  )
+}
+
+function formatAmount(raw: string): string {
+  return Number(raw).toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
+
+function formatUsd(value: number): string {
+  return value.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+}
+
+function formatPct(value: number): string {
+  if (Math.abs(value) >= 1000) return `${Math.round(value).toLocaleString()}%`
+  return `${value.toFixed(1)}%`
 }
 
 function EdgeList({

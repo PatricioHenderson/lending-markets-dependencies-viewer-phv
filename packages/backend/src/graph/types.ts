@@ -41,6 +41,15 @@ export interface DependencyNode {
   id: string
   type: DependencyNodeType
   label: string
+  supplyMetrics?: CollateralSupplyMetrics
+}
+
+export type CollateralSupplyMetrics = {
+  suppliedAmount: string
+  supplyCapAmount: string
+  supplyCapUsedPct?: number
+  suppliedUsd: number
+  shareOfCollateralPct: number
 }
 
 export interface DependencyEdge {
@@ -54,6 +63,7 @@ export type DependencyGraphInput = {
   protocol: string
   loan?: string
   collaterals: string[]
+  collateralMetrics?: Record<string, CollateralSupplyMetrics>
 }
 
 export type TokenDependency = {

@@ -2,6 +2,7 @@ import { DEFAULT_CHAINS, parseChainId, requireChain } from '../web3/chains'
 import { DEFAULT_LLM_PROVIDER, normalizeLlmProvider, type LlmProvider } from '../llms/providers'
 import { DependencyGraphBuilder } from './DependencyGraphBuilder'
 import type {
+  CollateralSupplyMetrics,
   DependencyGraph,
   DependencyGraphInput,
   MarketGraphRequest,
@@ -9,6 +10,7 @@ import type {
   SupportedProtocol,
 } from './types'
 import { AaveQuerier } from '../protocols/aave/AaveQuerier'
+import type { Reserve as AaveReserve } from '../protocols/aave/types'
 import { MAPLE_CHAINS } from '../protocols/maple/networks'
 import { MapleQuerier } from '../protocols/maple/MapleQuerier'
 import { SPARK_CHAINS } from '../protocols/spark/networks'
@@ -60,14 +62,15 @@ export class LendingMarketGraphBuilder {
       const resolved = await new AaveQuerier(chain).findReserve(marketId)
       if (!resolved) throw new Error(`Reserve ${marketId} was not found.`)
 
+      const collateralReserves = resolved.market.reserves.filter((reserve) => reserve.supplyInfo.canBeCollateral)
+
       return {
         chain: `${chain.network} (${chain.id})`,
         market: this.prefix(resolved.reserve.aToken.symbol, 'a'),
         protocol: 'Aave V3',
         loan: resolved.reserve.underlyingToken.symbol,
-        collaterals: resolved.market.reserves
-          .filter((reserve) => reserve.supplyInfo.canBeCollateral)
-          .map((reserve) => reserve.underlyingToken.symbol || reserve.aToken.symbol),
+        collaterals: collateralReserves.map((reserve) => reserve.underlyingToken.symbol || reserve.aToken.symbol),
+        collateralMetrics: this.buildCollateralMetrics(collateralReserves),
       }
     }
 
@@ -117,5 +120,27 @@ export class LendingMarketGraphBuilder {
 
   private prefix(symbol: string, value: string): string {
     return symbol.startsWith(value) ? symbol : `${value}${symbol}`
+  }
+
+  private buildCollateralMetrics(reserves: AaveReserve[]): Record<string, CollateralSupplyMetrics> {
+    const totalCollateralUsd = reserves.reduce((sum, reserve) => sum + Number(reserve.size.usd), 0)
+
+    const metrics: Record<string, CollateralSupplyMetrics> = {}
+    for (const reserve of reserves) {
+      const symbol = reserve.underlyingToken.symbol || reserve.aToken.symbol
+      const suppliedAmount = Number(reserve.supplyInfo.total.value)
+      const supplyCapAmount = Number(reserve.supplyInfo.supplyCap.amount.value)
+      const suppliedUsd = Number(reserve.size.usd)
+
+      metrics[symbol] = {
+        suppliedAmount: reserve.supplyInfo.total.value,
+        supplyCapAmount: reserve.supplyInfo.supplyCap.amount.value,
+        supplyCapUsedPct: supplyCapAmount > 0 ? (suppliedAmount / supplyCapAmount) * 100 : undefined,
+        suppliedUsd,
+        shareOfCollateralPct: totalCollateralUsd > 0 ? (suppliedUsd / totalCollateralUsd) * 100 : 0,
+      }
+    }
+
+    return metrics
   }
 }
