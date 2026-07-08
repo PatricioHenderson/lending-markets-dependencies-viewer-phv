@@ -86,7 +86,7 @@ export function DetailsPanel({ node, graph, onClose, onSelectNode }: DetailsPane
 
           {node.supplyMetrics && <SupplySection metrics={node.supplyMetrics} />}
           {node.marketSupply && <MarketSupplySection metrics={node.marketSupply} />}
-          {node.supplyMetrics && <RiskSection metrics={node.supplyMetrics} />}
+          {node.supplyMetrics && <CollateralParametersSection metrics={node.supplyMetrics} />}
 
           <EdgeList
             title={`Incoming (${incoming.length})`}
@@ -141,7 +141,7 @@ function SupplySection({ metrics }: { metrics: CollateralSupplyMetrics }) {
   )
 }
 
-function RiskSection({ metrics }: { metrics: CollateralSupplyMetrics }) {
+function CollateralParametersSection({ metrics }: { metrics: CollateralSupplyMetrics }) {
   const flags = [
     metrics.isFrozen ? "Frozen" : null,
     metrics.isPaused ? "Paused" : null,
