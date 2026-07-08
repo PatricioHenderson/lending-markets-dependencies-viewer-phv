@@ -46,10 +46,21 @@ export const AAVE_MARKET_QUERY = `
             }
             usd
           }
+          maxLTV {
+            formatted
+          }
+          liquidationThreshold {
+            formatted
+          }
+          liquidationBonus {
+            formatted
+          }
         }
         size {
           usd
         }
+        isFrozen
+        isPaused
       }
     }
   }

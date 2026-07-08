@@ -16,10 +16,17 @@ export interface TokenAmount {
   usd: string
 }
 
+export interface PercentValue {
+  formatted: string
+}
+
 export interface SupplyInfo {
   canBeCollateral: boolean
   total: DecimalValue
   supplyCap: TokenAmount
+  maxLTV: PercentValue
+  liquidationThreshold: PercentValue
+  liquidationBonus: PercentValue
 }
 
 export interface ReserveSize {
@@ -37,6 +44,8 @@ export interface Reserve {
   aToken: TokenAddressSymbol
   supplyInfo: SupplyInfo
   size: ReserveSize
+  isFrozen: boolean
+  isPaused: boolean
 }
 
 export interface Market {

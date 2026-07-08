@@ -10,10 +10,17 @@ import {
   type GraphNode,
   type MarketSupplyMetrics,
   type NodeType,
+  type Provenance,
 } from "@/lib/graph-types"
 import { formatAmount, formatPct, formatUsd } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+
+const DATA_SOURCE_LABEL: Record<Provenance, string> = {
+  api: "Protocol API",
+  curated: "Curated registry",
+  llm: "LLM-inferred (unverified)",
+}
 
 interface DetailsPanelProps {
   node: GraphNode
@@ -71,8 +78,15 @@ export function DetailsPanel({ node, graph, onClose, onSelectNode }: DetailsPane
             </code>
           </Field>
 
+          {node.provenance && (
+            <Field label="Data source">
+              <p className="text-xs text-card-foreground">{DATA_SOURCE_LABEL[node.provenance]}</p>
+            </Field>
+          )}
+
           {node.supplyMetrics && <SupplySection metrics={node.supplyMetrics} />}
           {node.marketSupply && <MarketSupplySection metrics={node.marketSupply} />}
+          {node.supplyMetrics && <RiskSection metrics={node.supplyMetrics} />}
 
           <EdgeList
             title={`Incoming (${incoming.length})`}
@@ -122,6 +136,28 @@ function SupplySection({ metrics }: { metrics: CollateralSupplyMetrics }) {
           }
         />
         <SupplyRow label="Share of market collateral" value={formatPct(metrics.shareOfCollateralPct)} />
+      </div>
+    </Field>
+  )
+}
+
+function RiskSection({ metrics }: { metrics: CollateralSupplyMetrics }) {
+  const flags = [
+    metrics.isFrozen ? "Frozen" : null,
+    metrics.isPaused ? "Paused" : null,
+  ].filter(Boolean) as string[]
+
+  return (
+    <Field label="Collateral Parameters">
+      <div className="space-y-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-2 text-xs">
+        <SupplyRow label="Max LTV" value={`${metrics.maxLtvPct.toFixed(2)}%`} />
+        <SupplyRow label="Liquidation threshold" value={`${metrics.liquidationThresholdPct.toFixed(2)}%`} />
+        <SupplyRow label="Liquidation bonus" value={`${metrics.liquidationBonusPct.toFixed(2)}%`} />
+        {flags.length > 0 && (
+          <div className="mt-1 flex items-center gap-1.5 rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-destructive-foreground">
+            <span className="font-semibold">⚠ {flags.join(" · ")}</span>
+          </div>
+        )}
       </div>
     </Field>
   )

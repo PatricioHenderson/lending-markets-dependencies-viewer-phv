@@ -17,12 +17,20 @@ export interface MarketSupplyMetrics {
 
 export interface CollateralSupplyMetrics extends MarketSupplyMetrics {
   shareOfCollateralPct: number
+  maxLtvPct: number
+  liquidationThresholdPct: number
+  liquidationBonusPct: number
+  isFrozen: boolean
+  isPaused: boolean
 }
+
+export type Provenance = "api" | "curated" | "llm"
 
 export interface GraphNode {
   id: string
   type: NodeType
   label: string
+  provenance?: Provenance
   supplyMetrics?: CollateralSupplyMetrics
   marketSupply?: MarketSupplyMetrics
 }
@@ -31,6 +39,7 @@ export interface GraphEdge {
   from: string
   to: string
   type: EdgeType
+  provenance?: Provenance
 }
 
 export interface DependencyGraph {

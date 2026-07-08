@@ -12,6 +12,8 @@ function DependencyNodeComponent({ data, selected }: NodeProps) {
   const meta = NODE_TYPE_META[d.type as NodeType]
   const color = meta?.color ?? "#94a3b8"
   const isRoot = d.isRoot
+  const isUnverified = d.provenance === "llm"
+  const riskFlag = d.supplyMetrics?.isFrozen ? "Frozen" : d.supplyMetrics?.isPaused ? "Paused" : undefined
   const metrics: MarketSupplyMetrics | undefined = d.supplyMetrics ?? d.marketSupply
   const shareOfCollateralPct = d.supplyMetrics?.shareOfCollateralPct
 
@@ -20,6 +22,7 @@ function DependencyNodeComponent({ data, selected }: NodeProps) {
       className={cn(
         "group relative flex flex-col rounded-md border bg-card/90 px-3 py-2 backdrop-blur-sm transition-shadow",
         isRoot ? "border-2" : "border",
+        isUnverified ? "border-dashed" : "",
         selected ? "ring-2 ring-offset-1 ring-offset-background" : "",
       )}
       style={{
@@ -31,6 +34,19 @@ function DependencyNodeComponent({ data, selected }: NodeProps) {
         "--tw-ring-color": color,
       }}
     >
+      {isUnverified && (
+        <span className="absolute -top-2 -left-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
+          Unverified
+        </span>
+      )}
+      {riskFlag && (
+        <span
+          className="absolute -top-2 -right-2 rounded-full border border-destructive/60 bg-destructive/90 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-destructive-foreground shadow-sm"
+          title={`This reserve is ${riskFlag.toLowerCase()} by governance`}
+        >
+          ⚠ {riskFlag}
+        </span>
+      )}
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-muted-foreground" />
       <div className="flex items-center gap-1.5">
         <span

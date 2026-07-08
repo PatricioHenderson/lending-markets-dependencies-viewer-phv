@@ -4,6 +4,7 @@ import {
   type EdgeType,
   type GraphNode,
   type MarketSupplyMetrics,
+  type Provenance,
   TOKEN_LIKE_TYPES,
 } from "./graph-types"
 
@@ -16,6 +17,12 @@ const VALID_NODE_TYPES = new Set([
   "position",
 ])
 const VALID_EDGE_TYPES = new Set(["loan", "collateral", "protocol", "underlying"])
+const VALID_PROVENANCE = new Set(["api", "curated", "llm"])
+
+/** Laxly parse an optional provenance value; anything unrecognized becomes undefined rather than failing the parse. */
+function parseProvenance(value: unknown): Provenance | undefined {
+  return typeof value === "string" && VALID_PROVENANCE.has(value) ? (value as Provenance) : undefined
+}
 
 export interface ParseResult {
   graph: DependencyGraph | null
@@ -41,9 +48,23 @@ function parseMarketSupply(value: unknown): MarketSupplyMetrics | undefined {
 function parseSupplyMetrics(value: unknown): CollateralSupplyMetrics | undefined {
   const base = parseMarketSupply(value)
   const m = value as Record<string, unknown>
-  if (!base || typeof m.shareOfCollateralPct !== "number") return undefined
+  if (!base) return undefined
+  if (typeof m.shareOfCollateralPct !== "number") return undefined
+  if (typeof m.maxLtvPct !== "number") return undefined
+  if (typeof m.liquidationThresholdPct !== "number") return undefined
+  if (typeof m.liquidationBonusPct !== "number") return undefined
+  if (typeof m.isFrozen !== "boolean") return undefined
+  if (typeof m.isPaused !== "boolean") return undefined
 
-  return { ...base, shareOfCollateralPct: m.shareOfCollateralPct }
+  return {
+    ...base,
+    shareOfCollateralPct: m.shareOfCollateralPct,
+    maxLtvPct: m.maxLtvPct,
+    liquidationThresholdPct: m.liquidationThresholdPct,
+    liquidationBonusPct: m.liquidationBonusPct,
+    isFrozen: m.isFrozen,
+    isPaused: m.isPaused,
+  }
 }
 
 /** Parse + validate a graph JSON string. */
@@ -92,10 +113,12 @@ export function parseGraph(input: string): ParseResult {
     ids.add(n.id)
     const supplyMetrics = parseSupplyMetrics(n.supplyMetrics)
     const marketSupply = parseMarketSupply(n.marketSupply)
+    const provenance = parseProvenance(n.provenance)
     nodes.push({
       id: n.id,
       type: n.type as GraphNode["type"],
       label: n.label,
+      ...(provenance ? { provenance } : {}),
       ...(supplyMetrics ? { supplyMetrics } : {}),
       ...(marketSupply ? { marketSupply } : {}),
     })
@@ -123,7 +146,13 @@ export function parseGraph(input: string): ParseResult {
     if (!ids.has(e.to)) {
       return { graph: null, error: `edges[${i}]: unknown "to" node "${e.to}".` }
     }
-    edges.push({ from: e.from, to: e.to, type: e.type as EdgeType })
+    const edgeProvenance = parseProvenance(e.provenance)
+    edges.push({
+      from: e.from,
+      to: e.to,
+      type: e.type as EdgeType,
+      ...(edgeProvenance ? { provenance: edgeProvenance } : {}),
+    })
   }
 
   return { graph: { root: obj.root, nodes, edges }, error: null }
@@ -201,7 +230,7 @@ export function computeVisibleGraph(
     const localSeen = new Set<string>()
     const stack: { to: string; type: EdgeType; crossedToken: boolean }[] = (
       outAdj.get(visibleId) ?? []
-    ).map((e) => ({ ...e, crossedToken: false }))
+    ).map((e) => ({ ...e, crossedToken: false })).reverse()
 
     while (stack.length) {
       const { to, type, crossedToken } = stack.pop()!
@@ -223,7 +252,7 @@ export function computeVisibleGraph(
       if (localSeen.has(to)) continue
       localSeen.add(to)
       const nowCrossedToken = crossedToken || TOKEN_SET.has(toNode.type)
-      for (const next of outAdj.get(to) ?? []) {
+      for (const next of [...(outAdj.get(to) ?? [])].reverse()) {
         stack.push({ to: next.to, type: next.type, crossedToken: nowCrossedToken })
       }
     }

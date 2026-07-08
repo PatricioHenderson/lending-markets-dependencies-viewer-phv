@@ -37,10 +37,13 @@ export interface DependencyGraph {
   edges: DependencyEdge[]
 }
 
+export type Provenance = 'api' | 'curated' | 'llm'
+
 export interface DependencyNode {
   id: string
   type: DependencyNodeType
   label: string
+  provenance: Provenance
   supplyMetrics?: CollateralSupplyMetrics
   marketSupply?: MarketSupplyMetrics
 }
@@ -54,12 +57,18 @@ export type MarketSupplyMetrics = {
 
 export type CollateralSupplyMetrics = MarketSupplyMetrics & {
   shareOfCollateralPct: number
+  maxLtvPct: number
+  liquidationThresholdPct: number
+  liquidationBonusPct: number
+  isFrozen: boolean
+  isPaused: boolean
 }
 
 export interface DependencyEdge {
   from: string
   to: string
   type: DependencyEdgeType
+  provenance: Provenance
 }
 
 export type DependencyGraphInput = {
@@ -80,6 +89,7 @@ export type TokenDependencies = {
   symbol: string
   tokenType: DependencyNodeType
   dependencies: TokenDependency[]
+  source: 'curated' | 'llm'
 }
 
 export type DependenciesCache = Map<string, Promise<TokenDependencies>>

@@ -63,7 +63,9 @@ export class LendingMarketGraphBuilder {
       const resolved = await new AaveQuerier(chain).findReserve(marketId)
       if (!resolved) throw new Error(`Reserve ${marketId} was not found.`)
 
-      const collateralReserves = resolved.market.reserves.filter((reserve) => reserve.supplyInfo.canBeCollateral)
+      const collateralReserves = resolved.market.reserves
+        .filter((reserve) => reserve.supplyInfo.canBeCollateral)
+        .sort((a, b) => Number(b.size.usd) - Number(a.size.usd))
 
       return {
         chain: `${chain.network} (${chain.id})`,
@@ -135,6 +137,11 @@ export class LendingMarketGraphBuilder {
       metrics[symbol] = {
         ...this.reserveSupplyBase(reserve),
         shareOfCollateralPct: totalCollateralUsd > 0 ? (suppliedUsd / totalCollateralUsd) * 100 : 0,
+        maxLtvPct: Number(reserve.supplyInfo.maxLTV.formatted),
+        liquidationThresholdPct: Number(reserve.supplyInfo.liquidationThreshold.formatted),
+        liquidationBonusPct: Number(reserve.supplyInfo.liquidationBonus.formatted),
+        isFrozen: reserve.isFrozen,
+        isPaused: reserve.isPaused,
       }
     }
 

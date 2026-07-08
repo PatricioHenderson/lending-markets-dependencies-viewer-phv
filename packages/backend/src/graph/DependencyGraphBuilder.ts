@@ -1,10 +1,13 @@
 import { LlmClient } from '../llms/LlmClient'
-import type { LlmProvider } from '../llms/providers'
+import { DEFAULT_LLM_PROVIDER, type LlmProvider } from '../llms/providers'
 import { TOKEN_DEPENDENCIES_PROMPT } from './prompt'
 import {
   TOKEN_DEPENDENCIES_NAME,
   TOKEN_DEPENDENCIES_SCHEMA,
 } from './schema'
+import { canonicalizeProtocolLabel } from '../registry/protocols'
+import { TOKEN_REGISTRY } from '../registry/tokens'
+import { recordLlmSuggestion } from '../registry/llmSuggestions'
 import {
   DEPENDENCY_EDGE_TYPE_COLLATERAL,
   DEPENDENCY_EDGE_TYPE_LOAN,
@@ -22,44 +25,66 @@ import type {
   DependencyNodeType,
   Graph,
   DependencyGraphInput,
+  Provenance,
   TokenDependency,
   TokenDependencies,
 } from './types'
 
-export class DependencyGraphBuilder {
-  private readonly llmClient: LlmClient
+const PROVENANCE_RANK: Record<Provenance, number> = { llm: 0, curated: 1, api: 2 }
 
-  constructor(provider?: LlmProvider) {
-    this.llmClient = LlmClient.create(provider)
-  }
+export class DependencyGraphBuilder {
+  private llmClient?: LlmClient
+
+  constructor(private readonly provider?: LlmProvider) {}
 
   async build(input: DependencyGraphInput, chain: string): Promise<DependencyGraph> {
     const graph = this.newGraph(chain)
-    const root = this.newNode(DEPENDENCY_NODE_TYPE_MARKET, input.market, chain, input.market)
+    const root = this.newNode(DEPENDENCY_NODE_TYPE_MARKET, input.market, 'api', chain, input.market)
     if (input.marketSupply) root.marketSupply = input.marketSupply
 
     graph.nodes.set(root.id, root)
-    this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_PROTOCOL, input.protocol, DEPENDENCY_NODE_TYPE_PROTOCOL)
+    this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_PROTOCOL, input.protocol, DEPENDENCY_NODE_TYPE_PROTOCOL, 'api')
     if (input.loan) {
-      this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_LOAN, input.loan, DEPENDENCY_NODE_TYPE_PRIMITIVE_TOKEN)
+      this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_LOAN, input.loan, DEPENDENCY_NODE_TYPE_PRIMITIVE_TOKEN, 'api')
     }
 
     for (const collateral of input.collaterals) {
       const tokenDependencies = await this.getTokenDependencies(graph, collateral)
-      const node = this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_COLLATERAL, collateral, tokenDependencies.tokenType)
+      const node = this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_COLLATERAL, collateral, tokenDependencies.tokenType, tokenDependencies.source)
       const supplyMetrics = input.collateralMetrics?.[collateral]
       if (supplyMetrics) node.supplyMetrics = supplyMetrics
-      await this.expandTokenNode(graph, node, tokenDependencies.dependencies, new Set([root.id]))
+      await this.expandTokenNode(graph, node, tokenDependencies.dependencies, new Set([root.id]), tokenDependencies.source)
     }
 
     return { root: root.id, nodes: [...graph.nodes.values()], edges: graph.edges }
   }
 
-  private addDependencyNode(graph: Graph, root: DependencyNode, edgeType: DependencyEdgeType, label: string, nodeType: DependencyNodeType): DependencyNode {
-    const node = this.newNode(nodeType, label, graph.chain)
+  private addDependencyNode(
+    graph: Graph,
+    root: DependencyNode,
+    edgeType: DependencyEdgeType,
+    label: string,
+    nodeType: DependencyNodeType,
+    provenance: Provenance,
+  ): DependencyNode {
+    const resolvedLabel = nodeType === DEPENDENCY_NODE_TYPE_PROTOCOL ? canonicalizeProtocolLabel(label) : label
+    const id = this.id(nodeType, graph.chain, resolvedLabel)
+    const existing = graph.nodes.get(id)
+
+    if (existing) {
+      existing.provenance = this.strongerProvenance(existing.provenance, provenance)
+      graph.edges.push({ from: root.id, to: existing.id, type: edgeType, provenance })
+      return existing
+    }
+
+    const node = this.newNode(nodeType, resolvedLabel, provenance, graph.chain)
     graph.nodes.set(node.id, node)
-    graph.edges.push({ from: root.id, to: node.id, type: edgeType })
+    graph.edges.push({ from: root.id, to: node.id, type: edgeType, provenance })
     return node
+  }
+
+  private strongerProvenance(a: Provenance, b: Provenance): Provenance {
+    return PROVENANCE_RANK[b] > PROVENANCE_RANK[a] ? b : a
   }
 
   private async expandTokenNode(
@@ -67,6 +92,7 @@ export class DependencyGraphBuilder {
     node: DependencyNode,
     dependencies: TokenDependency[],
     path: Set<string>,
+    provenance: Provenance,
   ): Promise<void> {
     if (this.isLeafNodeType(node.type)) return
     if (path.has(node.id)) return
@@ -82,11 +108,12 @@ export class DependencyGraphBuilder {
         this.edgeTypeForDependency(dependency.kind),
         dependency.label,
         dependency.kind,
+        provenance,
       )
 
       if (this.isLeafNodeType(dependencyNode.type)) continue
       const dependencyTokenDependencies = await this.getTokenDependencies(graph, dependency.label)
-      await this.expandTokenNode(graph, dependencyNode, dependencyTokenDependencies.dependencies, nextPath)
+      await this.expandTokenNode(graph, dependencyNode, dependencyTokenDependencies.dependencies, nextPath, dependencyTokenDependencies.source)
     }
   }
 
@@ -95,7 +122,16 @@ export class DependencyGraphBuilder {
     const cached = graph.dependenciesCache.get(key)
     if (cached) return cached
 
-    const dependencies = this.requestTokenDependencies(graph, token)
+    const registryEntry = TOKEN_REGISTRY[token.trim().toLowerCase()]
+    const dependencies: Promise<TokenDependencies> = registryEntry
+      ? Promise.resolve({
+          symbol: token,
+          tokenType: registryEntry.type,
+          dependencies: registryEntry.dependencies,
+          source: 'curated',
+        })
+      : this.requestTokenDependencies(graph, token)
+
     graph.dependenciesCache.set(key, dependencies)
     return dependencies
   }
@@ -119,11 +155,12 @@ export class DependencyGraphBuilder {
       .join(':')
   }
 
-  private newNode(type: DependencyNodeType, label: string, ...idParts: string[]): DependencyNode {
+  private newNode(type: DependencyNodeType, label: string, provenance: Provenance, ...idParts: string[]): DependencyNode {
     return {
       id: this.id(type, ...idParts, label),
       type,
       label,
+      provenance,
     }
   }
 
@@ -138,7 +175,9 @@ export class DependencyGraphBuilder {
   }
 
   private async requestTokenDependencies(graph: Graph, token: string): Promise<TokenDependencies> {
-    return this.llmClient.requestJson<TokenDependencies>({
+    if (!this.llmClient) this.llmClient = LlmClient.create(this.provider)
+
+    const response = await this.llmClient.requestJson<Omit<TokenDependencies, 'source'>>({
       instructions: TOKEN_DEPENDENCIES_PROMPT,
       name: TOKEN_DEPENDENCIES_NAME,
       schema: TOKEN_DEPENDENCIES_SCHEMA,
@@ -147,5 +186,15 @@ export class DependencyGraphBuilder {
         token,
       },
     })
+
+    recordLlmSuggestion(
+      token.trim().toLowerCase(),
+      { tokenType: response.tokenType, dependencies: response.dependencies },
+      this.provider ?? DEFAULT_LLM_PROVIDER,
+      graph.chain,
+      new Date().toISOString(),
+    )
+
+    return { ...response, source: 'llm' }
   }
 }

@@ -1,6 +1,6 @@
 import dagre from "dagre"
 import { type Edge, type Node, MarkerType, Position } from "@xyflow/react"
-import { EDGE_TYPE_META, type CollateralSupplyMetrics, type GraphNode, type MarketSupplyMetrics } from "./graph-types"
+import { EDGE_TYPE_META, type CollateralSupplyMetrics, type GraphNode, type MarketSupplyMetrics, type Provenance } from "./graph-types"
 import type { VisibleGraph } from "./graph-filter"
 
 export const NODE_WIDTH = 180
@@ -12,6 +12,7 @@ export interface FlowNodeData extends Record<string, unknown> {
   label: string
   type: string
   isRoot: boolean
+  provenance?: Provenance
   supplyMetrics?: CollateralSupplyMetrics
   marketSupply?: MarketSupplyMetrics
 }
@@ -21,6 +22,8 @@ export function nodeSize(n: Pick<GraphNode, "supplyMetrics" | "marketSupply">): 
     ? { width: SUPPLY_NODE_WIDTH, height: SUPPLY_NODE_HEIGHT }
     : { width: NODE_WIDTH, height: NODE_HEIGHT }
 }
+
+const COLLATERAL_STACK_GAP = 24
 
 export function layoutGraph(
   visible: VisibleGraph,
@@ -40,17 +43,36 @@ export function layoutGraph(
 
   dagre.layout(g)
 
+  // Dagre orders nodes to minimize edge crossings (even across ranks it assigns nodes to),
+  // which ignores supply size. Override the y of all collateral nodes (identified by
+  // supplyMetrics) so the whole list stacks by descending "share of market collateral",
+  // regardless of which rank/column dagre happened to place each one in.
+  const collateralNodes = visible.nodes.filter((n): n is GraphNode & { supplyMetrics: CollateralSupplyMetrics } =>
+    Boolean(n.supplyMetrics),
+  )
+  const sortedCollaterals = [...collateralNodes].sort(
+    (a, b) => b.supplyMetrics.shareOfCollateralPct - a.supplyMetrics.shareOfCollateralPct,
+  )
+  const collateralY = new Map<string, number>()
+  let cursorY = Math.min(...sortedCollaterals.map((n) => (g.node(n.id)?.y ?? 0) - nodeSize(n).height / 2))
+  for (const n of sortedCollaterals) {
+    collateralY.set(n.id, cursorY)
+    cursorY += nodeSize(n).height + COLLATERAL_STACK_GAP
+  }
+
   const nodes: Node<FlowNodeData>[] = visible.nodes.map((n) => {
     const pos = g.node(n.id)
     const size = nodeSize(n)
+    const y = collateralY.get(n.id) ?? (pos?.y ?? 0) - size.height / 2
     return {
       id: n.id,
       type: "dependency",
-      position: { x: (pos?.x ?? 0) - size.width / 2, y: (pos?.y ?? 0) - size.height / 2 },
+      position: { x: (pos?.x ?? 0) - size.width / 2, y },
       data: {
         label: n.label,
         type: n.type,
         isRoot: n.id === rootId,
+        provenance: n.provenance,
         supplyMetrics: n.supplyMetrics,
         marketSupply: n.marketSupply,
       },

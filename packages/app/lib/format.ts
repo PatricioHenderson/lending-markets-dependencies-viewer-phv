@@ -17,5 +17,6 @@ export function formatCompactUsd(value: number): string {
 
 export function formatPct(value: number): string {
   if (Math.abs(value) >= 1000) return `${Math.round(value).toLocaleString()}%`
-  return `${value.toFixed(1)}%`
+  if (value !== 0 && Math.abs(value) < 0.01) return `${value.toFixed(4)}%`
+  return `${value.toFixed(2)}%`
 }
