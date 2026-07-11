@@ -31,6 +31,7 @@ export interface GraphNode {
   type: NodeType
   label: string
   provenance?: Provenance
+  address?: string
   supplyMetrics?: CollateralSupplyMetrics
   marketSupply?: MarketSupplyMetrics
 }
@@ -44,6 +45,7 @@ export interface GraphEdge {
 
 export interface DependencyGraph {
   root: string
+  chainId?: number
   nodes: GraphNode[]
   edges: GraphEdge[]
 }

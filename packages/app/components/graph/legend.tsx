@@ -1,6 +1,6 @@
 "use client"
 
-import { EDGE_TYPE_META, NODE_TYPE_META, type EdgeType, type NodeType } from "@/lib/graph-types"
+import { EDGE_TYPE_META, NODE_TYPE_META, type EdgeType, type NodeType } from "@/types/graph"
 
 const NODE_ORDER: NodeType[] = [
   "market",

@@ -12,7 +12,7 @@ import {
 } from "./market-request-panel"
 import { computeVisibleGraph, parseGraph } from "@/lib/graph-filter"
 import { SAMPLE_GRAPH, SAMPLE_GRAPH_JSON } from "@/lib/sample-graph"
-import { DEFAULT_EDGE_TYPE_VISIBILITY, type DependencyGraph, type EdgeType } from "@/lib/graph-types"
+import { DEFAULT_EDGE_TYPE_VISIBILITY, type DependencyGraph, type EdgeType } from "@/types/graph"
 import { Button } from "@/components/ui/button"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"

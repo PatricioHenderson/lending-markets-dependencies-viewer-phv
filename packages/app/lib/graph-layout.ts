@@ -1,6 +1,6 @@
 import dagre from "dagre"
 import { type Edge, type Node, MarkerType, Position } from "@xyflow/react"
-import { EDGE_TYPE_META, type CollateralSupplyMetrics, type GraphNode, type MarketSupplyMetrics, type Provenance } from "./graph-types"
+import { EDGE_TYPE_META, type CollateralSupplyMetrics, type GraphNode, type MarketSupplyMetrics, type Provenance } from "@/types/graph"
 import type { VisibleGraph } from "./graph-filter"
 
 export const NODE_WIDTH = 180

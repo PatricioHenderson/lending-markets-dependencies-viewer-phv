@@ -2,7 +2,7 @@
 
 import { memo } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
-import { NODE_TYPE_META, type MarketSupplyMetrics, type NodeType } from "@/lib/graph-types"
+import { NODE_TYPE_META, type MarketSupplyMetrics, type NodeType } from "@/types/graph"
 import { formatAmount, formatPct, formatUsd } from "@/lib/format"
 import { NODE_HEIGHT, NODE_WIDTH, SUPPLY_NODE_HEIGHT, SUPPLY_NODE_WIDTH, type FlowNodeData } from "@/lib/graph-layout"
 import { cn } from "@/lib/utils"

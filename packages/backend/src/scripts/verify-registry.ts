@@ -1,34 +1,6 @@
 import { DependencyGraphBuilder } from '../graph/DependencyGraphBuilder'
-import type { DependencyGraph, DependencyGraphInput } from '../graph/types'
-
-const CHAIN = 'ethereum (1)'
-
-const INPUT: DependencyGraphInput = {
-  market: 'aEthUSDC',
-  protocol: 'Aave V3',
-  loan: 'USDC',
-  collaterals: [
-    'AAVE',
-    'BTC.b',
-    'FBTC',
-    'LBTC',
-    'PT-sUSDE-5FEB2026',
-    'PT-USDe-5FEB2026',
-    'PYUSD',
-    'USDC',
-    'USDT',
-    'WBTC',
-    'WETH',
-    'cbBTC',
-    'cbETH',
-    'eBTC',
-    'rETH',
-    'syrupUSDT',
-    'tBTC',
-    'weETH',
-    'wstETH',
-  ],
-}
+import type { DependencyGraph } from '../graph/types'
+import { AUSDC_CHAIN as CHAIN, AUSDC_INPUT as INPUT } from './fixtures'
 
 const LLM_ENV_KEYS = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY']
 

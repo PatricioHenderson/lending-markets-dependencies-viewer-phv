@@ -69,10 +69,14 @@ export class LendingMarketGraphBuilder {
 
       return {
         chain: `${chain.network} (${chain.id})`,
+        chainId: chain.id,
         market: this.prefix(resolved.reserve.aToken.symbol, 'a'),
+        marketAddress: resolved.reserve.aToken.address,
         protocol: 'Aave V3',
         loan: resolved.reserve.underlyingToken.symbol,
+        loanAddress: resolved.reserve.underlyingToken.address,
         collaterals: collateralReserves.map((reserve) => reserve.underlyingToken.symbol || reserve.aToken.symbol),
+        collateralAddresses: this.buildCollateralAddresses(collateralReserves),
         collateralMetrics: this.buildCollateralMetrics(collateralReserves),
         marketSupply: this.reserveSupplyBase(resolved.reserve),
       }
@@ -87,6 +91,7 @@ export class LendingMarketGraphBuilder {
 
       return {
         chain: `${chain.network} (${chain.id})`,
+        chainId: chain.id,
         market: resolved.reserve.symbol,
         protocol: 'SparkLend',
         loan: resolved.reserve.symbol,
@@ -103,6 +108,7 @@ export class LendingMarketGraphBuilder {
 
       return {
         chain: `${chain.network} (${chain.id})`,
+        chainId: chain.id,
         market: pool.symbol || pool.name,
         protocol: 'Maple',
         loan: pool.assetSymbol,
@@ -115,6 +121,7 @@ export class LendingMarketGraphBuilder {
 
     return {
       chain: `${chain.network} (${chain.id})`,
+      chainId: chain.id,
       market: `${market.collateralAsset.symbol}/${market.loanAsset.symbol}`,
       protocol: 'Morpho',
       loan: market.loanAsset.symbol,
@@ -124,6 +131,16 @@ export class LendingMarketGraphBuilder {
 
   private prefix(symbol: string, value: string): string {
     return symbol.startsWith(value) ? symbol : `${value}${symbol}`
+  }
+
+  private buildCollateralAddresses(reserves: AaveReserve[]): Record<string, string> {
+    const addresses: Record<string, string> = {}
+    for (const reserve of reserves) {
+      const symbol = reserve.underlyingToken.symbol || reserve.aToken.symbol
+      addresses[symbol] = reserve.underlyingToken.address
+    }
+
+    return addresses
   }
 
   private buildCollateralMetrics(reserves: AaveReserve[]): Record<string, CollateralSupplyMetrics> {

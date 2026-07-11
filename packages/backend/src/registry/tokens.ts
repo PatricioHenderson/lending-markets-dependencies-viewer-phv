@@ -32,6 +32,7 @@ export const TOKEN_REGISTRY: Record<string, TokenRegistryEntry> = {
       { label: 'ETH', kind: DEPENDENCY_NODE_TYPE_PRIMITIVE_TOKEN },
       { label: 'Lido', kind: DEPENDENCY_NODE_TYPE_PROTOCOL },
     ],
+    addresses: { 1: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84' },
   },
   weeth: {
     type: DEPENDENCY_NODE_TYPE_WRAPPER,
@@ -46,6 +47,7 @@ export const TOKEN_REGISTRY: Record<string, TokenRegistryEntry> = {
       { label: 'ETH', kind: DEPENDENCY_NODE_TYPE_PRIMITIVE_TOKEN },
       { label: 'Ether.fi', kind: DEPENDENCY_NODE_TYPE_PROTOCOL },
     ],
+    addresses: { 1: '0x35fa164735182de50811e8e2e824cfb9b6118ac2' },
   },
   ebtc: {
     type: DEPENDENCY_NODE_TYPE_WRAPPER,
@@ -121,6 +123,7 @@ export const TOKEN_REGISTRY: Record<string, TokenRegistryEntry> = {
   usde: {
     type: DEPENDENCY_NODE_TYPE_WRAPPER,
     dependencies: [{ label: 'Ethena', kind: DEPENDENCY_NODE_TYPE_PROTOCOL }],
+    addresses: { 1: '0x4c9edd5852cd905f086c759e8383e09bff1e68b3' },
   },
 
   'pt-susde-5feb2026': {

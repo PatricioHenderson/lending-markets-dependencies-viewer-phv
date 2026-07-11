@@ -9,4 +9,5 @@ export type ProtocolEntry = {
 export type TokenRegistryEntry = {
   type: DependencyNodeType
   dependencies: TokenDependency[]
+  addresses?: Record<number, string>
 }

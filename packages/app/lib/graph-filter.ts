@@ -6,7 +6,7 @@ import {
   type MarketSupplyMetrics,
   type Provenance,
   TOKEN_LIKE_TYPES,
-} from "./graph-types"
+} from "@/types/graph"
 
 const VALID_NODE_TYPES = new Set([
   "market",
@@ -114,11 +114,13 @@ export function parseGraph(input: string): ParseResult {
     const supplyMetrics = parseSupplyMetrics(n.supplyMetrics)
     const marketSupply = parseMarketSupply(n.marketSupply)
     const provenance = parseProvenance(n.provenance)
+    const address = typeof n.address === "string" ? n.address : undefined
     nodes.push({
       id: n.id,
       type: n.type as GraphNode["type"],
       label: n.label,
       ...(provenance ? { provenance } : {}),
+      ...(address ? { address } : {}),
       ...(supplyMetrics ? { supplyMetrics } : {}),
       ...(marketSupply ? { marketSupply } : {}),
     })
@@ -155,7 +157,8 @@ export function parseGraph(input: string): ParseResult {
     })
   }
 
-  return { graph: { root: obj.root, nodes, edges }, error: null }
+  const chainId = typeof obj.chainId === "number" ? obj.chainId : undefined
+  return { graph: { root: obj.root, ...(chainId !== undefined ? { chainId } : {}), nodes, edges }, error: null }
 }
 
 export interface VisibleEdge {

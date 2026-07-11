@@ -38,25 +38,34 @@ export class DependencyGraphBuilder {
   constructor(private readonly provider?: LlmProvider) {}
 
   async build(input: DependencyGraphInput, chain: string): Promise<DependencyGraph> {
-    const graph = this.newGraph(chain)
+    const graph = this.newGraph(chain, input.chainId)
     const root = this.newNode(DEPENDENCY_NODE_TYPE_MARKET, input.market, 'api', chain, input.market)
     if (input.marketSupply) root.marketSupply = input.marketSupply
+    if (input.marketAddress) root.address = input.marketAddress
 
     graph.nodes.set(root.id, root)
     this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_PROTOCOL, input.protocol, DEPENDENCY_NODE_TYPE_PROTOCOL, 'api')
     if (input.loan) {
-      this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_LOAN, input.loan, DEPENDENCY_NODE_TYPE_PRIMITIVE_TOKEN, 'api')
+      this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_LOAN, input.loan, DEPENDENCY_NODE_TYPE_PRIMITIVE_TOKEN, 'api', input.loanAddress)
     }
 
     for (const collateral of input.collaterals) {
       const tokenDependencies = await this.getTokenDependencies(graph, collateral)
-      const node = this.addDependencyNode(graph, root, DEPENDENCY_EDGE_TYPE_COLLATERAL, collateral, tokenDependencies.tokenType, tokenDependencies.source)
+      const node = this.addDependencyNode(
+        graph,
+        root,
+        DEPENDENCY_EDGE_TYPE_COLLATERAL,
+        collateral,
+        tokenDependencies.tokenType,
+        tokenDependencies.source,
+        input.collateralAddresses?.[collateral],
+      )
       const supplyMetrics = input.collateralMetrics?.[collateral]
       if (supplyMetrics) node.supplyMetrics = supplyMetrics
       await this.expandTokenNode(graph, node, tokenDependencies.dependencies, new Set([root.id]), tokenDependencies.source)
     }
 
-    return { root: root.id, nodes: [...graph.nodes.values()], edges: graph.edges }
+    return { root: root.id, chainId: input.chainId, nodes: [...graph.nodes.values()], edges: graph.edges }
   }
 
   private addDependencyNode(
@@ -66,21 +75,29 @@ export class DependencyGraphBuilder {
     label: string,
     nodeType: DependencyNodeType,
     provenance: Provenance,
+    address?: string,
   ): DependencyNode {
     const resolvedLabel = nodeType === DEPENDENCY_NODE_TYPE_PROTOCOL ? canonicalizeProtocolLabel(label) : label
+    const resolvedAddress = address ?? this.registryAddress(resolvedLabel, graph.chainId)
     const id = this.id(nodeType, graph.chain, resolvedLabel)
     const existing = graph.nodes.get(id)
 
     if (existing) {
       existing.provenance = this.strongerProvenance(existing.provenance, provenance)
+      if (!existing.address && resolvedAddress) existing.address = resolvedAddress
       graph.edges.push({ from: root.id, to: existing.id, type: edgeType, provenance })
       return existing
     }
 
     const node = this.newNode(nodeType, resolvedLabel, provenance, graph.chain)
+    if (resolvedAddress) node.address = resolvedAddress
     graph.nodes.set(node.id, node)
     graph.edges.push({ from: root.id, to: node.id, type: edgeType, provenance })
     return node
+  }
+
+  private registryAddress(label: string, chainId: number): string | undefined {
+    return TOKEN_REGISTRY[label.trim().toLowerCase()]?.addresses?.[chainId]
   }
 
   private strongerProvenance(a: Provenance, b: Provenance): Provenance {
@@ -164,9 +181,10 @@ export class DependencyGraphBuilder {
     }
   }
 
-  private newGraph(chain: string): Graph {
+  private newGraph(chain: string, chainId: number): Graph {
     return {
       chain,
+      chainId,
       nodes: new Map(),
       edges: [],
       dependenciesCache: new Map(),

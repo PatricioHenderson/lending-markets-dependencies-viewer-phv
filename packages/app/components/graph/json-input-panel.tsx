@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { parseGraph } from "@/lib/graph-filter"
 import { SAMPLE_GRAPH_JSON } from "@/lib/sample-graph"
-import type { DependencyGraph } from "@/lib/graph-types"
+import type { DependencyGraph } from "@/types/graph"
 
 interface JsonInputPanelProps {
   value: string
