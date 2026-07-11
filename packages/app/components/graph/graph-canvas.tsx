@@ -16,9 +16,10 @@ import "@xyflow/react/dist/style.css"
 import { Crosshair, Maximize2 } from "lucide-react"
 import { DependencyNode } from "./dependency-node"
 import { Legend } from "./legend"
+import { ExposurePanel } from "./exposure-panel"
 import { layoutGraph, type FlowNodeData } from "@/lib/graph-layout"
 import type { VisibleGraph } from "@/lib/graph-filter"
-import { EDGE_TYPE_META, EDGE_TYPES, type EdgeType } from "@/types/graph"
+import { EDGE_TYPE_META, EDGE_TYPES, type DependencyGraph, type EdgeType } from "@/types/graph"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -27,6 +28,7 @@ const nodeTypes = { dependency: DependencyNode }
 
 interface GraphCanvasProps {
   visible: VisibleGraph
+  graph: DependencyGraph
   rootId: string
   selectedId: string | null
   showProtocols: boolean
@@ -41,6 +43,7 @@ interface GraphCanvasProps {
 export function GraphCanvas(props: GraphCanvasProps) {
   const {
     visible,
+    graph,
     rootId,
     selectedId,
     showProtocols,
@@ -142,6 +145,10 @@ export function GraphCanvas(props: GraphCanvasProps) {
 
       <div className="absolute bottom-4 left-4 z-10 w-72 max-w-[80%]">
         <Legend />
+      </div>
+
+      <div className="absolute right-4 top-4 z-10">
+        <ExposurePanel graph={graph} />
       </div>
 
       <ReactFlow

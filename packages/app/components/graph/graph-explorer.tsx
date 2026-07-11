@@ -136,6 +136,7 @@ export function GraphExplorer() {
           <ReactFlowProvider>
             <GraphCanvas
               visible={visible}
+              graph={graph}
               rootId={graph.root}
               selectedId={selectedId}
               showProtocols={showProtocols}
