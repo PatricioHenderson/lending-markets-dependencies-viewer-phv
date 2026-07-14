@@ -1,9 +1,12 @@
 import {
+  type CollateralSupplyMetrics,
   type DependencyGraph,
   type EdgeType,
   type GraphNode,
+  type MarketSupplyMetrics,
+  type Provenance,
   TOKEN_LIKE_TYPES,
-} from "./graph-types"
+} from "@/types/graph"
 
 const VALID_NODE_TYPES = new Set([
   "market",
@@ -14,10 +17,54 @@ const VALID_NODE_TYPES = new Set([
   "position",
 ])
 const VALID_EDGE_TYPES = new Set(["loan", "collateral", "protocol", "underlying"])
+const VALID_PROVENANCE = new Set(["api", "curated", "llm"])
+
+/** Laxly parse an optional provenance value; anything unrecognized becomes undefined rather than failing the parse. */
+function parseProvenance(value: unknown): Provenance | undefined {
+  return typeof value === "string" && VALID_PROVENANCE.has(value) ? (value as Provenance) : undefined
+}
 
 export interface ParseResult {
   graph: DependencyGraph | null
   error: string | null
+}
+
+/** Best-effort parse of optional per-node supply metrics; malformed input is dropped, not fatal. */
+function parseMarketSupply(value: unknown): MarketSupplyMetrics | undefined {
+  if (typeof value !== "object" || value === null) return undefined
+  const m = value as Record<string, unknown>
+  if (typeof m.suppliedAmount !== "string") return undefined
+  if (typeof m.supplyCapAmount !== "string") return undefined
+  if (typeof m.suppliedUsd !== "number") return undefined
+
+  return {
+    suppliedAmount: m.suppliedAmount,
+    supplyCapAmount: m.supplyCapAmount,
+    supplyCapUsedPct: typeof m.supplyCapUsedPct === "number" ? m.supplyCapUsedPct : undefined,
+    suppliedUsd: m.suppliedUsd,
+  }
+}
+
+function parseSupplyMetrics(value: unknown): CollateralSupplyMetrics | undefined {
+  const base = parseMarketSupply(value)
+  const m = value as Record<string, unknown>
+  if (!base) return undefined
+  if (typeof m.shareOfCollateralPct !== "number") return undefined
+  if (typeof m.maxLtvPct !== "number") return undefined
+  if (typeof m.liquidationThresholdPct !== "number") return undefined
+  if (typeof m.liquidationBonusPct !== "number") return undefined
+  if (typeof m.isFrozen !== "boolean") return undefined
+  if (typeof m.isPaused !== "boolean") return undefined
+
+  return {
+    ...base,
+    shareOfCollateralPct: m.shareOfCollateralPct,
+    maxLtvPct: m.maxLtvPct,
+    liquidationThresholdPct: m.liquidationThresholdPct,
+    liquidationBonusPct: m.liquidationBonusPct,
+    isFrozen: m.isFrozen,
+    isPaused: m.isPaused,
+  }
 }
 
 /** Parse + validate a graph JSON string. */
@@ -64,7 +111,19 @@ export function parseGraph(input: string): ParseResult {
       return { graph: null, error: `Duplicate node id "${n.id}".` }
     }
     ids.add(n.id)
-    nodes.push({ id: n.id, type: n.type as GraphNode["type"], label: n.label })
+    const supplyMetrics = parseSupplyMetrics(n.supplyMetrics)
+    const marketSupply = parseMarketSupply(n.marketSupply)
+    const provenance = parseProvenance(n.provenance)
+    const address = typeof n.address === "string" ? n.address : undefined
+    nodes.push({
+      id: n.id,
+      type: n.type as GraphNode["type"],
+      label: n.label,
+      ...(provenance ? { provenance } : {}),
+      ...(address ? { address } : {}),
+      ...(supplyMetrics ? { supplyMetrics } : {}),
+      ...(marketSupply ? { marketSupply } : {}),
+    })
   }
 
   if (!ids.has(obj.root)) {
@@ -89,10 +148,17 @@ export function parseGraph(input: string): ParseResult {
     if (!ids.has(e.to)) {
       return { graph: null, error: `edges[${i}]: unknown "to" node "${e.to}".` }
     }
-    edges.push({ from: e.from, to: e.to, type: e.type as EdgeType })
+    const edgeProvenance = parseProvenance(e.provenance)
+    edges.push({
+      from: e.from,
+      to: e.to,
+      type: e.type as EdgeType,
+      ...(edgeProvenance ? { provenance: edgeProvenance } : {}),
+    })
   }
 
-  return { graph: { root: obj.root, nodes, edges }, error: null }
+  const chainId = typeof obj.chainId === "number" ? obj.chainId : undefined
+  return { graph: { root: obj.root, ...(chainId !== undefined ? { chainId } : {}), nodes, edges }, error: null }
 }
 
 export interface VisibleEdge {
@@ -107,6 +173,7 @@ export interface VisibleEdge {
 export interface FilterOptions {
   showProtocols: boolean
   showTokens: boolean
+  edgeTypeVisibility: Record<EdgeType, boolean>
 }
 
 export interface VisibleGraph {
@@ -118,18 +185,20 @@ const TOKEN_SET = new Set<string>(TOKEN_LIKE_TYPES)
 
 /**
  * Produce the visible graph given filter options.
+ * - Edges whose type is disabled in edgeTypeVisibility are not traversed at all.
  * - Hidden protocols / token-like nodes are removed (root never hidden).
- * - Only nodes reachable from root through visible nodes (or hidden chains) are kept.
+ * - Only nodes reachable from root through visible nodes/edges (or hidden node chains) are kept.
  * - A visible node reachable only through hidden nodes is connected to its nearest
  *   visible ancestor with a dashed edge ("via hidden tokens" when crossing token nodes).
  */
 export function computeVisibleGraph(
   graph: DependencyGraph,
-  { showProtocols, showTokens }: FilterOptions,
+  { showProtocols, showTokens, edgeTypeVisibility }: FilterOptions,
 ): VisibleGraph {
   const nodeById = new Map(graph.nodes.map((n) => [n.id, n]))
   const outAdj = new Map<string, { to: string; type: EdgeType }[]>()
   for (const e of graph.edges) {
+    if (!edgeTypeVisibility[e.type]) continue
     if (!outAdj.has(e.from)) outAdj.set(e.from, [])
     outAdj.get(e.from)!.push({ to: e.to, type: e.type })
   }
@@ -164,7 +233,7 @@ export function computeVisibleGraph(
     const localSeen = new Set<string>()
     const stack: { to: string; type: EdgeType; crossedToken: boolean }[] = (
       outAdj.get(visibleId) ?? []
-    ).map((e) => ({ ...e, crossedToken: false }))
+    ).map((e) => ({ ...e, crossedToken: false })).reverse()
 
     while (stack.length) {
       const { to, type, crossedToken } = stack.pop()!
@@ -186,7 +255,7 @@ export function computeVisibleGraph(
       if (localSeen.has(to)) continue
       localSeen.add(to)
       const nowCrossedToken = crossedToken || TOKEN_SET.has(toNode.type)
-      for (const next of outAdj.get(to) ?? []) {
+      for (const next of [...(outAdj.get(to) ?? [])].reverse()) {
         stack.push({ to: next.to, type: next.type, crossedToken: nowCrossedToken })
       }
     }

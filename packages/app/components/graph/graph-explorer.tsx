@@ -12,7 +12,7 @@ import {
 } from "./market-request-panel"
 import { computeVisibleGraph, parseGraph } from "@/lib/graph-filter"
 import { SAMPLE_GRAPH, SAMPLE_GRAPH_JSON } from "@/lib/sample-graph"
-import type { DependencyGraph } from "@/lib/graph-types"
+import { DEFAULT_EDGE_TYPE_VISIBILITY, type DependencyGraph, type EdgeType } from "@/types/graph"
 import { Button } from "@/components/ui/button"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
@@ -22,15 +22,22 @@ export function GraphExplorer() {
   const [graph, setGraph] = useState<DependencyGraph>(SAMPLE_GRAPH)
   const [showProtocols, setShowProtocols] = useState(true)
   const [showTokens, setShowTokens] = useState(true)
+  const [edgeTypeVisibility, setEdgeTypeVisibility] = useState<Record<EdgeType, boolean>>(
+    DEFAULT_EDGE_TYPE_VISIBILITY,
+  )
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [inputOpen, setInputOpen] = useState(true)
   const [loadingMarket, setLoadingMarket] = useState(false)
   const [marketError, setMarketError] = useState<string | null>(null)
 
   const visible = useMemo(
-    () => computeVisibleGraph(graph, { showProtocols, showTokens }),
-    [graph, showProtocols, showTokens],
+    () => computeVisibleGraph(graph, { showProtocols, showTokens, edgeTypeVisibility }),
+    [graph, showProtocols, showTokens, edgeTypeVisibility],
   )
+
+  const handleToggleEdgeType = (type: EdgeType, value: boolean) => {
+    setEdgeTypeVisibility((prev) => ({ ...prev, [type]: value }))
+  }
 
   const selectedNode = useMemo(() => {
     if (!selectedId) return null
@@ -129,12 +136,15 @@ export function GraphExplorer() {
           <ReactFlowProvider>
             <GraphCanvas
               visible={visible}
+              graph={graph}
               rootId={graph.root}
               selectedId={selectedId}
               showProtocols={showProtocols}
               showTokens={showTokens}
+              edgeTypeVisibility={edgeTypeVisibility}
               onToggleProtocols={setShowProtocols}
               onToggleTokens={setShowTokens}
+              onToggleEdgeType={handleToggleEdgeType}
               onNodeClick={setSelectedId}
             />
           </ReactFlowProvider>

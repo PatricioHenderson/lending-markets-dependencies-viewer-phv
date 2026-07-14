@@ -37,7 +37,30 @@ export const AAVE_MARKET_QUERY = `
         }
         supplyInfo {
           canBeCollateral
+          total {
+            value
+          }
+          supplyCap {
+            amount {
+              value
+            }
+            usd
+          }
+          maxLTV {
+            formatted
+          }
+          liquidationThreshold {
+            formatted
+          }
+          liquidationBonus {
+            formatted
+          }
         }
+        size {
+          usd
+        }
+        isFrozen
+        isPaused
       }
     }
   }

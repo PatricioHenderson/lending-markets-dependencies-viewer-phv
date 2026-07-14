@@ -2,13 +2,16 @@ import { DEFAULT_CHAINS, parseChainId, requireChain } from '../web3/chains'
 import { DEFAULT_LLM_PROVIDER, normalizeLlmProvider, type LlmProvider } from '../llms/providers'
 import { DependencyGraphBuilder } from './DependencyGraphBuilder'
 import type {
+  CollateralSupplyMetrics,
   DependencyGraph,
   DependencyGraphInput,
   MarketGraphRequest,
   MarketProtocol,
+  MarketSupplyMetrics,
   SupportedProtocol,
 } from './types'
 import { AaveQuerier } from '../protocols/aave/AaveQuerier'
+import type { Reserve as AaveReserve } from '../protocols/aave/types'
 import { MAPLE_CHAINS } from '../protocols/maple/networks'
 import { MapleQuerier } from '../protocols/maple/MapleQuerier'
 import { SPARK_CHAINS } from '../protocols/spark/networks'
@@ -60,14 +63,22 @@ export class LendingMarketGraphBuilder {
       const resolved = await new AaveQuerier(chain).findReserve(marketId)
       if (!resolved) throw new Error(`Reserve ${marketId} was not found.`)
 
+      const collateralReserves = resolved.market.reserves
+        .filter((reserve) => reserve.supplyInfo.canBeCollateral)
+        .sort((a, b) => Number(b.size.usd) - Number(a.size.usd))
+
       return {
         chain: `${chain.network} (${chain.id})`,
+        chainId: chain.id,
         market: this.prefix(resolved.reserve.aToken.symbol, 'a'),
+        marketAddress: resolved.reserve.aToken.address,
         protocol: 'Aave V3',
         loan: resolved.reserve.underlyingToken.symbol,
-        collaterals: resolved.market.reserves
-          .filter((reserve) => reserve.supplyInfo.canBeCollateral)
-          .map((reserve) => reserve.underlyingToken.symbol || reserve.aToken.symbol),
+        loanAddress: resolved.reserve.underlyingToken.address,
+        collaterals: collateralReserves.map((reserve) => reserve.underlyingToken.symbol || reserve.aToken.symbol),
+        collateralAddresses: this.buildCollateralAddresses(collateralReserves),
+        collateralMetrics: this.buildCollateralMetrics(collateralReserves),
+        marketSupply: this.reserveSupplyBase(resolved.reserve),
       }
     }
 
@@ -80,6 +91,7 @@ export class LendingMarketGraphBuilder {
 
       return {
         chain: `${chain.network} (${chain.id})`,
+        chainId: chain.id,
         market: resolved.reserve.symbol,
         protocol: 'SparkLend',
         loan: resolved.reserve.symbol,
@@ -96,6 +108,7 @@ export class LendingMarketGraphBuilder {
 
       return {
         chain: `${chain.network} (${chain.id})`,
+        chainId: chain.id,
         market: pool.symbol || pool.name,
         protocol: 'Maple',
         loan: pool.assetSymbol,
@@ -108,6 +121,7 @@ export class LendingMarketGraphBuilder {
 
     return {
       chain: `${chain.network} (${chain.id})`,
+      chainId: chain.id,
       market: `${market.collateralAsset.symbol}/${market.loanAsset.symbol}`,
       protocol: 'Morpho',
       loan: market.loanAsset.symbol,
@@ -117,5 +131,49 @@ export class LendingMarketGraphBuilder {
 
   private prefix(symbol: string, value: string): string {
     return symbol.startsWith(value) ? symbol : `${value}${symbol}`
+  }
+
+  private buildCollateralAddresses(reserves: AaveReserve[]): Record<string, string> {
+    const addresses: Record<string, string> = {}
+    for (const reserve of reserves) {
+      const symbol = reserve.underlyingToken.symbol || reserve.aToken.symbol
+      addresses[symbol] = reserve.underlyingToken.address
+    }
+
+    return addresses
+  }
+
+  private buildCollateralMetrics(reserves: AaveReserve[]): Record<string, CollateralSupplyMetrics> {
+    const totalCollateralUsd = reserves.reduce((sum, reserve) => sum + Number(reserve.size.usd), 0)
+
+    const metrics: Record<string, CollateralSupplyMetrics> = {}
+    for (const reserve of reserves) {
+      const symbol = reserve.underlyingToken.symbol || reserve.aToken.symbol
+      const suppliedUsd = Number(reserve.size.usd)
+
+      metrics[symbol] = {
+        ...this.reserveSupplyBase(reserve),
+        shareOfCollateralPct: totalCollateralUsd > 0 ? (suppliedUsd / totalCollateralUsd) * 100 : 0,
+        maxLtvPct: Number(reserve.supplyInfo.maxLTV.formatted),
+        liquidationThresholdPct: Number(reserve.supplyInfo.liquidationThreshold.formatted),
+        liquidationBonusPct: Number(reserve.supplyInfo.liquidationBonus.formatted),
+        isFrozen: reserve.isFrozen,
+        isPaused: reserve.isPaused,
+      }
+    }
+
+    return metrics
+  }
+
+  private reserveSupplyBase(reserve: AaveReserve): MarketSupplyMetrics {
+    const suppliedAmount = Number(reserve.supplyInfo.total.value)
+    const supplyCapAmount = Number(reserve.supplyInfo.supplyCap.amount.value)
+
+    return {
+      suppliedAmount: reserve.supplyInfo.total.value,
+      supplyCapAmount: reserve.supplyInfo.supplyCap.amount.value,
+      supplyCapUsedPct: supplyCapAmount > 0 ? (suppliedAmount / supplyCapAmount) * 100 : undefined,
+      suppliedUsd: Number(reserve.size.usd),
+    }
   }
 }

@@ -16,8 +16,10 @@ import "@xyflow/react/dist/style.css"
 import { Crosshair, Maximize2 } from "lucide-react"
 import { DependencyNode } from "./dependency-node"
 import { Legend } from "./legend"
+import { ExposurePanel } from "./exposure-panel"
 import { layoutGraph, type FlowNodeData } from "@/lib/graph-layout"
 import type { VisibleGraph } from "@/lib/graph-filter"
+import { EDGE_TYPE_META, EDGE_TYPES, type DependencyGraph, type EdgeType } from "@/types/graph"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -26,24 +28,30 @@ const nodeTypes = { dependency: DependencyNode }
 
 interface GraphCanvasProps {
   visible: VisibleGraph
+  graph: DependencyGraph
   rootId: string
   selectedId: string | null
   showProtocols: boolean
   showTokens: boolean
+  edgeTypeVisibility: Record<EdgeType, boolean>
   onToggleProtocols: (v: boolean) => void
   onToggleTokens: (v: boolean) => void
+  onToggleEdgeType: (type: EdgeType, v: boolean) => void
   onNodeClick: (id: string) => void
 }
 
 export function GraphCanvas(props: GraphCanvasProps) {
   const {
     visible,
+    graph,
     rootId,
     selectedId,
     showProtocols,
     showTokens,
+    edgeTypeVisibility,
     onToggleProtocols,
     onToggleTokens,
+    onToggleEdgeType,
     onNodeClick,
   } = props
 
@@ -104,6 +112,20 @@ export function GraphCanvas(props: GraphCanvasProps) {
             </Label>
           </div>
         </div>
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card/85 px-4 py-2 backdrop-blur-sm">
+          {EDGE_TYPES.map((type) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <Switch
+                id={`toggle-edge-${type}`}
+                checked={edgeTypeVisibility[type]}
+                onCheckedChange={(v) => onToggleEdgeType(type, v)}
+              />
+              <Label htmlFor={`toggle-edge-${type}`} className="cursor-pointer text-xs text-card-foreground">
+                {EDGE_TYPE_META[type].label}
+              </Label>
+            </div>
+          ))}
+        </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card/85 px-2 py-1.5 backdrop-blur-sm">
           <Button
             variant="ghost"
@@ -123,6 +145,10 @@ export function GraphCanvas(props: GraphCanvasProps) {
 
       <div className="absolute bottom-4 left-4 z-10 w-72 max-w-[80%]">
         <Legend />
+      </div>
+
+      <div className="absolute right-4 top-4 z-10">
+        <ExposurePanel graph={graph} />
       </div>
 
       <ReactFlow

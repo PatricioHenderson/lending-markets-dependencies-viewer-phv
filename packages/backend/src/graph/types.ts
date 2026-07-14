@@ -33,20 +33,44 @@ export type DependencyNodeType = typeof DEPENDENCY_NODE_TYPES[number]
 
 export interface DependencyGraph {
   root: string
+  chainId: number
   nodes: DependencyNode[]
   edges: DependencyEdge[]
 }
+
+export type Provenance = 'api' | 'curated' | 'llm'
 
 export interface DependencyNode {
   id: string
   type: DependencyNodeType
   label: string
+  provenance: Provenance
+  address?: string
+  supplyMetrics?: CollateralSupplyMetrics
+  marketSupply?: MarketSupplyMetrics
+}
+
+export type MarketSupplyMetrics = {
+  suppliedAmount: string
+  supplyCapAmount: string
+  supplyCapUsedPct?: number
+  suppliedUsd: number
+}
+
+export type CollateralSupplyMetrics = MarketSupplyMetrics & {
+  shareOfCollateralPct: number
+  maxLtvPct: number
+  liquidationThresholdPct: number
+  liquidationBonusPct: number
+  isFrozen: boolean
+  isPaused: boolean
 }
 
 export interface DependencyEdge {
   from: string
   to: string
   type: DependencyEdgeType
+  provenance: Provenance
 }
 
 export type DependencyGraphInput = {
@@ -54,6 +78,12 @@ export type DependencyGraphInput = {
   protocol: string
   loan?: string
   collaterals: string[]
+  collateralMetrics?: Record<string, CollateralSupplyMetrics>
+  marketSupply?: MarketSupplyMetrics
+  chainId: number
+  marketAddress?: string
+  loanAddress?: string
+  collateralAddresses?: Record<string, string>
 }
 
 export type TokenDependency = {
@@ -65,12 +95,14 @@ export type TokenDependencies = {
   symbol: string
   tokenType: DependencyNodeType
   dependencies: TokenDependency[]
+  source: 'curated' | 'llm'
 }
 
 export type DependenciesCache = Map<string, Promise<TokenDependencies>>
 
 export type Graph = {
   chain: string
+  chainId: number
   nodes: Map<string, DependencyNode>
   edges: DependencyEdge[]
   dependenciesCache: DependenciesCache

@@ -7,8 +7,30 @@ export interface TokenAddress {
   address: string
 }
 
+export interface DecimalValue {
+  value: string
+}
+
+export interface TokenAmount {
+  amount: DecimalValue
+  usd: string
+}
+
+export interface PercentValue {
+  formatted: string
+}
+
 export interface SupplyInfo {
   canBeCollateral: boolean
+  total: DecimalValue
+  supplyCap: TokenAmount
+  maxLTV: PercentValue
+  liquidationThreshold: PercentValue
+  liquidationBonus: PercentValue
+}
+
+export interface ReserveSize {
+  usd: string
 }
 
 export interface ReserveTokenAddresses {
@@ -21,6 +43,9 @@ export interface Reserve {
   underlyingToken: TokenAddressSymbol
   aToken: TokenAddressSymbol
   supplyInfo: SupplyInfo
+  size: ReserveSize
+  isFrozen: boolean
+  isPaused: boolean
 }
 
 export interface Market {
