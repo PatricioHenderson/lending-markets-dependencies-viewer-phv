@@ -13,9 +13,10 @@ import {
 import { computeVisibleGraph, parseGraph } from "@/lib/graph-filter"
 import { SAMPLE_GRAPH, SAMPLE_GRAPH_JSON } from "@/lib/sample-graph"
 import { DEFAULT_EDGE_TYPE_VISIBILITY, type DependencyGraph, type EdgeType } from "@/types/graph"
+import { getApiBaseUrl } from "@/lib/api-base-url"
 import { Button } from "@/components/ui/button"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+const API_BASE_URL = getApiBaseUrl()
 
 export function GraphExplorer() {
   const [rawJson, setRawJson] = useState(SAMPLE_GRAPH_JSON)
@@ -52,6 +53,12 @@ export function GraphExplorer() {
   const handleLoadMarket = async (request: MarketGraphLoadRequest) => {
     setLoadingMarket(true)
     setMarketError(null)
+
+    if (!API_BASE_URL) {
+      setMarketError("Backend not configured for this deployment (set NEXT_PUBLIC_API_URL).")
+      setLoadingMarket(false)
+      return
+    }
 
     try {
       const params = new URLSearchParams({
@@ -103,6 +110,17 @@ export function GraphExplorer() {
             <h1 className="text-sm font-semibold tracking-tight text-foreground">
               Lending Market Dependency Graph Explorer
             </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
+            <a
+              href="https://app.notion.com/p/mimic-fi/Lending-Markets-dependency-viewer-39d9958dbf4d8070b228cafa09f2b578?source=copy_link"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold tracking-tight text-foreground hover:underline"
+            >
+              How to read this
+            </a>
           </div>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">

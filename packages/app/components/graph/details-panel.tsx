@@ -15,10 +15,11 @@ import {
 } from "@/types/graph"
 import type { ContractControlMetadata } from "@/types/inspector"
 import { formatAmount, formatPct, formatUsd } from "@/lib/format"
+import { getApiBaseUrl } from "@/lib/api-base-url"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+const API_BASE_URL = getApiBaseUrl()
 
 const DATA_SOURCE_LABEL: Record<Provenance, string> = {
   api: "Protocol API",
@@ -59,6 +60,10 @@ export function DetailsPanel({ node, graph, onClose, onSelectNode }: DetailsPane
     setInspectError(null)
 
     if (!node.address || graph.chainId === undefined) return
+    if (!API_BASE_URL) {
+      setInspectError("Backend not configured for this deployment (set NEXT_PUBLIC_API_URL).")
+      return
+    }
 
     let cancelled = false
     setInspectLoading(true)

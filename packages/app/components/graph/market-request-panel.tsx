@@ -57,11 +57,16 @@ const PROTOCOLS = [
   },
 ]
 
+const DEFAULT_PROTOCOL_ID = "aave-v3"
+const DEFAULT_CHAIN_ID = "1"
+const DEFAULT_MARKET_ID = "USDC"
+const DEFAULT_LLM = "openrouter"
+
 export function MarketRequestPanel({ loading, error, onLoad }: MarketRequestPanelProps) {
-  const [protocol, setProtocol] = useState(PROTOCOLS[0].id)
-  const [chainId, setChainId] = useState(PROTOCOLS[0].chains[0].id)
-  const [marketId, setMarketId] = useState(PROTOCOLS[0].defaultMarketId)
-  const [llm, setLlm] = useState("openai")
+  const [protocol, setProtocol] = useState(DEFAULT_PROTOCOL_ID)
+  const [chainId, setChainId] = useState(DEFAULT_CHAIN_ID)
+  const [marketId, setMarketId] = useState(DEFAULT_MARKET_ID)
+  const [llm, setLlm] = useState(DEFAULT_LLM)
 
   const selectedProtocol = useMemo(
     () => PROTOCOLS.find((item) => item.id === protocol) ?? PROTOCOLS[0],
