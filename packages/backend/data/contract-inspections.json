@@ -14,7 +14,7 @@
     "inspectedAt": "2026-07-11T14:38:07.330Z"
   },
   "1:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
-    "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     "chainId": 1,
     "isContract": true,
     "isProxy": true,
@@ -33,7 +33,7 @@
       "blacklist": true
     },
     "paused": false,
-    "inspectedAt": "2026-07-11T14:38:08.554Z"
+    "inspectedAt": "2026-07-14T10:23:53.654Z"
   },
   "1:0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c": {
     "address": "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c",
@@ -89,7 +89,7 @@
       "mintable": true,
       "blacklist": false
     },
-    "inspectedAt": "2026-07-11T15:15:49.442Z"
+    "inspectedAt": "2026-07-14T10:24:59.048Z"
   },
   "1:0x18084fba666a33d37592fa2633fd49a74dd93a88": {
     "address": "0x18084fbA666a33d37592fA2633fD49a74DD93a88",
@@ -114,7 +114,7 @@
       "mintable": true,
       "blacklist": false
     },
-    "inspectedAt": "2026-07-11T15:16:43.633Z"
+    "inspectedAt": "2026-07-14T10:24:16.026Z"
   },
   "1:0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9": {
     "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
@@ -151,7 +151,7 @@
       "mintable": false,
       "blacklist": false
     },
-    "inspectedAt": "2026-07-11T15:16:54.636Z"
+    "inspectedAt": "2026-07-14T10:32:50.876Z"
   },
   "1:0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee": {
     "address": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
@@ -196,5 +196,253 @@
     },
     "paused": false,
     "inspectedAt": "2026-07-13T18:16:52.371Z"
+  },
+  "1:0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0": {
+    "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T00:37:20.056Z"
+  },
+  "1:0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+    "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [
+      {
+        "type": "proxy-admin",
+        "address": "0xCA06411bd7a7296d7dbdd0050DFc846E95fEBEB7"
+      },
+      {
+        "type": "contract",
+        "address": "0x972Eed35781f09987a5c40F761f6A24623C570DE"
+      }
+    ],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": true,
+      "mintable": true,
+      "blacklist": false
+    },
+    "paused": false,
+    "inspectedAt": "2026-07-14T00:37:24.764Z"
+  },
+  "1:0x35fa164735182de50811e8e2e824cfb9b6118ac2": {
+    "address": "0x35fa164735182de50811e8e2e824cfb9b6118ac2",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": true,
+    "proxyType": "eip1967",
+    "implementation": "0xcb3d917a965a70214f430a135154cd5adda2ad84",
+    "controlChain": [
+      {
+        "type": "timelock",
+        "address": "0x9f26d4C958fD811A1F59B01B86Be7dFFc9d20761",
+        "delaySeconds": 864000
+      }
+    ],
+    "capabilities": {
+      "upgradeable": true,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:23:51.614Z"
+  },
+  "1:0xae78736cd615f374d3085123a210448e74fc6393": {
+    "address": "0xae78736Cd615f374D3085123A210448E74Fc6393",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:32:45.856Z"
+  },
+  "1:0x6c3ea9036406852006290770bedfcaba0e23a0e8": {
+    "address": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": true,
+    "proxyType": "zeppelinos-legacy",
+    "implementation": "0x8c35caa5fd5bdc64b6b11344ad57594a3676256a",
+    "controlChain": [
+      {
+        "type": "eoa",
+        "address": "0x3Af3e85f4f97De7AD0f000B724Fb77fE5ffc024B"
+      }
+    ],
+    "capabilities": {
+      "upgradeable": true,
+      "pausable": true,
+      "mintable": true,
+      "blacklist": false
+    },
+    "paused": false,
+    "inspectedAt": "2026-07-14T10:32:53.921Z"
+  },
+  "1:0xc96de26018a54d51c097160568752c4e3bd6c364": {
+    "address": "0xC96dE26018A54D51c097160568752c4E3BD6C364",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [
+      {
+        "type": "safe",
+        "address": "0xD5bc4bc0d8c055fCF2Ba97010c9D32FFc7d424d9",
+        "threshold": 5,
+        "owners": 8
+      }
+    ],
+    "capabilities": {
+      "upgradeable": true,
+      "pausable": true,
+      "mintable": true,
+      "blacklist": false
+    },
+    "paused": false,
+    "inspectedAt": "2026-07-14T10:32:56.856Z"
+  },
+  "1:0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d": {
+    "address": "0x356B8d89c1e1239Cbbb9dE4815c39A1474d5BA7D",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:32:58.419Z"
+  },
+  "1:0xbe9895146f7af43049ca1c1ae358b0541ea49704": {
+    "address": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": true,
+    "proxyType": "zeppelinos-legacy",
+    "implementation": "0x31724ca0c982a31fbb5c57f4217ab585271fc9a5",
+    "controlChain": [
+      {
+        "type": "eoa",
+        "address": "0xD0f9b590EAe80815b81bE857A21f69d07453560E"
+      }
+    ],
+    "capabilities": {
+      "upgradeable": true,
+      "pausable": true,
+      "mintable": true,
+      "blacklist": true
+    },
+    "paused": false,
+    "inspectedAt": "2026-07-14T10:33:04.400Z"
+  },
+  "1:0x657e8c867d8b37dcc18fa4caead9c45eb088c642": {
+    "address": "0x657e8C867D8B37dCC18fA4Caead9C45EB088C642",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [
+      {
+        "type": "eoa",
+        "address": "0x0000000000000000000000000000000000000000"
+      }
+    ],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:33:07.365Z"
+  },
+  "1:0xb0f70c0bd6fd87dbeb7c10dc692a2a6106817072": {
+    "address": "0xB0F70C0bD6FD87dbEb7C10dC692a2a6106817072",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": true,
+    "proxyType": "eip1967",
+    "implementation": "0x6b89d757668a830f17d693a88d46073501df635d",
+    "controlChain": [
+      {
+        "type": "proxy-admin",
+        "address": "0xcee83a2bef5c7a72994826e55940c56d39e70095"
+      },
+      {
+        "type": "timelock",
+        "address": "0x055E84e7FE8955E2781010B866f10Ef6E1E77e59",
+        "delaySeconds": 86400
+      }
+    ],
+    "capabilities": {
+      "upgradeable": true,
+      "pausable": false,
+      "mintable": true,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:33:11.692Z"
+  },
+  "1:0xe8483517077afa11a9b07f849cee2552f040d7b2": {
+    "address": "0xE8483517077afa11A9B07f849cee2552f040d7b2",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:33:13.267Z"
+  },
+  "1:0x1f84a51296691320478c98b8d77f2bbd17d34350": {
+    "address": "0x1F84a51296691320478c98b8d77f2Bbd17D34350",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": false,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:33:15.249Z"
+  },
+  "1:0x4c9edd5852cd905f086c759e8383e09bff1e68b3": {
+    "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    "chainId": 1,
+    "isContract": true,
+    "isProxy": false,
+    "controlChain": [
+      {
+        "type": "safe",
+        "address": "0x3B0AAf6e6fCd4a7cEEf8c92C32DFeA9E64dC1862",
+        "threshold": 5,
+        "owners": 10
+      }
+    ],
+    "capabilities": {
+      "upgradeable": false,
+      "pausable": false,
+      "mintable": true,
+      "blacklist": false
+    },
+    "inspectedAt": "2026-07-14T10:33:20.321Z"
   }
 }
