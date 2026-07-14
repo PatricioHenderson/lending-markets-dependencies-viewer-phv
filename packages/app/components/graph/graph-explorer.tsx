@@ -111,6 +111,17 @@ export function GraphExplorer() {
               Lending Market Dependency Graph Explorer
             </h1>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
+            <a
+              href="https://app.notion.com/p/mimic-fi/Lending-Markets-dependency-viewer-39d9958dbf4d8070b228cafa09f2b578?source=copy_link"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold tracking-tight text-foreground hover:underline"
+            >
+              How to read this
+            </a>
+          </div>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span>
